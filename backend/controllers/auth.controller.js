@@ -9,7 +9,7 @@ const sanitizeUser = (userDoc) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role: roleFromBody } = req.body;
 
     const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
@@ -20,10 +20,13 @@ export const register = async (req, res) => {
       });
     }
 
+    const role = roleFromBody === 'owner' ? 'owner' : 'client';
+
     const user = await User.create({
       name,
       email,
       password,
+      role,
     });
 
     const token = generateToken(user._id.toString(), user.role);
