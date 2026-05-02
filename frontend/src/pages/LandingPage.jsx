@@ -14,6 +14,9 @@ export default function LandingPage() {
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
+        <Link to="/businesses" className={cn(buttonVariants({ variant: 'secondary' }))}>
+          Browse businesses
+        </Link>
         <Link to="/login" className={cn(buttonVariants())}>
           Log in
         </Link>

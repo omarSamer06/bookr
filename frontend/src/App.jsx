@@ -2,11 +2,17 @@ import { useEffect, useMemo } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import OwnerBusinessGate from '@/components/shared/OwnerBusinessGate'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
+import BusinessDashboardPage from '@/pages/owner/BusinessDashboardPage'
+import BusinessSetupPage from '@/pages/owner/BusinessSetupPage'
+import BusinessDetailPage from '@/pages/public/BusinessDetailPage'
+import BusinessListPage from '@/pages/public/BusinessListPage'
+import BookingPlaceholderPage from '@/pages/public/BookingPlaceholderPage'
 import { AUTH_TOKEN_KEY } from '@/lib/auth-constants'
 import { useAuthStore } from '@/store/authStore'
 
@@ -35,6 +41,9 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/businesses" element={<BusinessListPage />} />
+            <Route path="/businesses/:id" element={<BusinessDetailPage />} />
+            <Route path="/booking/:businessId" element={<BookingPlaceholderPage />} />
             <Route
               path="/dashboard"
               element={
@@ -43,6 +52,17 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/business"
+              element={
+                <ProtectedRoute roles={['owner']}>
+                  <OwnerBusinessGate />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<BusinessDashboardPage />} />
+              <Route path="setup" element={<BusinessSetupPage />} />
+            </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

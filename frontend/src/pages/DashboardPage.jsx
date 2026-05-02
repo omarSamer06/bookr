@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import useAuth from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 const roleLabels = {
   client: 'Client',
@@ -35,6 +36,19 @@ export default function DashboardPage() {
           <CardDescription>You’re signed in. Booking tools will land here next.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <Link to="/businesses" className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'justify-center')}>
+              Browse businesses
+            </Link>
+            {user?.role === 'owner' ? (
+              <Link
+                to="/dashboard/business"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'justify-center')}
+              >
+                Manage my business
+              </Link>
+            ) : null}
+          </div>
           <div>
             <p className="text-sm text-muted-foreground">Signed in as</p>
             <p className="text-lg font-medium">{user?.name}</p>
