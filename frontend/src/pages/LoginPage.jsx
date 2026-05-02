@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Globe } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { setAuth, isLoading: bootLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -33,7 +34,12 @@ export default function LoginPage() {
       const { user, token } = await authService.login({ email, password })
       setAuth(user, token)
       toast.success('Welcome back')
-      navigate('/dashboard', { replace: true })
+      const from = location.state?.from
+      const target =
+        typeof from?.pathname === 'string'
+          ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+          : '/dashboard'
+      navigate(target, { replace: true })
     } catch (err) {
       toast.error(err.message)
     } finally {

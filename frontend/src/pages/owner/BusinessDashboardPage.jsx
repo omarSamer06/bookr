@@ -177,12 +177,20 @@ export default function BusinessDashboardPage() {
           </div>
           <p className="text-sm text-muted-foreground">{categoryLabel(business.category)}</p>
         </div>
-        <Link
-          to={`/businesses/${business._id}`}
-          className={cn(buttonVariants({ variant: 'outline' }))}
-        >
-          View public profile
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/dashboard/business/appointments"
+            className={cn(buttonVariants({ variant: 'secondary' }))}
+          >
+            Appointments
+          </Link>
+          <Link
+            to={`/businesses/${business._id}`}
+            className={cn(buttonVariants({ variant: 'outline' }))}
+          >
+            View public profile
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="gap-6">

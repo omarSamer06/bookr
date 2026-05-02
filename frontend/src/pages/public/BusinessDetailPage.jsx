@@ -132,7 +132,7 @@ export default function BusinessDetailPage() {
             ) : null}
           </ul>
           <Link
-            to={`/booking/${business._id}`}
+            to={`/book/${business._id}`}
             className={cn(buttonVariants(), 'inline-flex w-full justify-center')}
           >
             Book now

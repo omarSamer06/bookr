@@ -10,9 +10,11 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import BusinessDashboardPage from '@/pages/owner/BusinessDashboardPage'
 import BusinessSetupPage from '@/pages/owner/BusinessSetupPage'
+import BookingPage from '@/pages/client/BookingPage'
+import ClientAppointmentsPage from '@/pages/client/ClientAppointmentsPage'
+import OwnerAppointmentsPage from '@/pages/owner/OwnerAppointmentsPage'
 import BusinessDetailPage from '@/pages/public/BusinessDetailPage'
 import BusinessListPage from '@/pages/public/BusinessListPage'
-import BookingPlaceholderPage from '@/pages/public/BookingPlaceholderPage'
 import { AUTH_TOKEN_KEY } from '@/lib/auth-constants'
 import { useAuthStore } from '@/store/authStore'
 
@@ -43,12 +45,27 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/businesses" element={<BusinessListPage />} />
             <Route path="/businesses/:id" element={<BusinessDetailPage />} />
-            <Route path="/booking/:businessId" element={<BookingPlaceholderPage />} />
+            <Route
+              path="/book/:businessId"
+              element={
+                <ProtectedRoute roles={['client']}>
+                  <BookingPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/appointments"
+              element={
+                <ProtectedRoute roles={['client']}>
+                  <ClientAppointmentsPage />
                 </ProtectedRoute>
               }
             />
@@ -61,6 +78,7 @@ export default function App() {
               }
             >
               <Route index element={<BusinessDashboardPage />} />
+              <Route path="appointments" element={<OwnerAppointmentsPage />} />
               <Route path="setup" element={<BusinessSetupPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

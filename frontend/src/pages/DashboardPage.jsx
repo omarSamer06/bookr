@@ -40,6 +40,14 @@ export default function DashboardPage() {
             <Link to="/businesses" className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'justify-center')}>
               Browse businesses
             </Link>
+            {user?.role === 'client' ? (
+              <Link
+                to="/dashboard/appointments"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'justify-center')}
+              >
+                My appointments
+              </Link>
+            ) : null}
             {user?.role === 'owner' ? (
               <Link
                 to="/dashboard/business"
