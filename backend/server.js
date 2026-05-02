@@ -7,6 +7,7 @@ import passport from 'passport';
 import connectDB from './config/db.js';
 import configurePassport from './config/passport.js';
 import authRoutes from './routes/auth.routes.js';
+import businessRoutes from './routes/business.routes.js';
 
 configurePassport();
 
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use(passport.initialize());
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/businesses', businessRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({
