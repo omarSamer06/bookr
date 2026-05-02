@@ -12,6 +12,7 @@ import BusinessDashboardPage from '@/pages/owner/BusinessDashboardPage'
 import BusinessSetupPage from '@/pages/owner/BusinessSetupPage'
 import BookingPage from '@/pages/client/BookingPage'
 import ClientAppointmentsPage from '@/pages/client/ClientAppointmentsPage'
+import PaymentSuccessPage from '@/pages/client/PaymentSuccessPage'
 import OwnerAppointmentsPage from '@/pages/owner/OwnerAppointmentsPage'
 import BusinessDetailPage from '@/pages/public/BusinessDetailPage'
 import BusinessListPage from '@/pages/public/BusinessListPage'
@@ -66,6 +67,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['client']}>
                   <ClientAppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payment/success"
+              element={
+                <ProtectedRoute roles={['client']}>
+                  <PaymentSuccessPage />
                 </ProtectedRoute>
               }
             />

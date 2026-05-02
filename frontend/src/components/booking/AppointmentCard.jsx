@@ -19,6 +19,24 @@ function formatAppointmentWhen(appointment) {
   })
 }
 
+/** Money badges stay independent from scheduling badges so refunds don’t collide visually */
+function PaymentStatusBadge({ paymentStatus }) {
+  const ps = paymentStatus || 'unpaid'
+  const styles = {
+    unpaid: 'border-red-500/35 bg-red-500/10 text-red-700 dark:text-red-300',
+    paid: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    refunded: 'border-muted-foreground/40 bg-muted text-muted-foreground',
+  }
+
+  const label = ps === 'unpaid' ? 'Unpaid' : ps === 'paid' ? 'Paid' : ps === 'refunded' ? 'Refunded' : ps
+
+  return (
+    <Badge variant="outline" className={cn('capitalize', styles[ps] ?? styles.unpaid)}>
+      {label}
+    </Badge>
+  )
+}
+
 /** Centralizes badge chroma so owners + clients read risk consistently */
 function StatusBadge({ status }) {
   const styles = {
@@ -47,6 +65,7 @@ export default function AppointmentCard({
   onConfirm,
   onComplete,
   onNoShow,
+  onRefund,
 }) {
   const future = isAppointmentFuture(appointment)
   const status = appointment.status
@@ -93,6 +112,12 @@ export default function AppointmentCard({
     status !== 'cancelled' &&
     status !== 'completed'
 
+  const showOwnerRefund =
+    viewType === 'owner' &&
+    Boolean(onRefund) &&
+    appointment.paymentStatus === 'paid' &&
+    status === 'cancelled'
+
   return (
     <Card className="border-border/70">
       <CardContent className="space-y-3 pt-5">
@@ -104,6 +129,7 @@ export default function AppointmentCard({
               ) : null}
               <p className="font-heading text-base font-semibold">{title}</p>
               <StatusBadge status={status} />
+              <PaymentStatusBadge paymentStatus={appointment.paymentStatus} />
             </div>
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
@@ -151,6 +177,11 @@ export default function AppointmentCard({
           {showOwnerCancel ? (
             <Button type="button" variant="destructive" size="sm" onClick={() => onCancel(appointment)}>
               Cancel
+            </Button>
+          ) : null}
+          {showOwnerRefund ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => onRefund(appointment)}>
+              Refund
             </Button>
           ) : null}
         </div>

@@ -201,10 +201,10 @@ export const refundPayment = async (req, res) => {
       });
     }
 
-    if (appointment.status !== 'completed') {
+    if (!['completed', 'cancelled'].includes(appointment.status)) {
       return res.status(400).json({
         success: false,
-        message: 'Refunds are limited to completed appointments',
+        message: 'Refunds apply only after checkout settles — completed visits or cancelled bookings',
         data: {},
       });
     }

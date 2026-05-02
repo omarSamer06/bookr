@@ -5,6 +5,14 @@ import toast from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
 import AppointmentCard from '@/components/booking/AppointmentCard'
 import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -22,6 +30,7 @@ import {
   getBusinessAppointments,
   updateAppointmentStatus,
 } from '@/services/appointment.service.js'
+import { refundPayment } from '@/services/payment.service.js'
 
 /** Owner filters mirror backend query params so cache keys stay predictable */
 export default function OwnerAppointmentsPage() {
@@ -29,6 +38,7 @@ export default function OwnerAppointmentsPage() {
   const [status, setStatus] = useState('all')
   const [date, setDate] = useState('')
   const [upcomingOnly, setUpcomingOnly] = useState(false)
+  const [refundTarget, setRefundTarget] = useState(null)
 
   const filters = useMemo(() => {
     const f = {}
@@ -58,6 +68,16 @@ export default function OwnerAppointmentsPage() {
     onSuccess: async () => {
       toast.success('Appointment cancelled')
       await qc.invalidateQueries({ queryKey: ['appointments', 'business'] })
+    },
+    onError: (err) => toast.error(err.message),
+  })
+
+  const refundMut = useMutation({
+    mutationFn: (id) => refundPayment(id),
+    onSuccess: async () => {
+      toast.success('Refund issued')
+      await qc.invalidateQueries({ queryKey: ['appointments', 'business'] })
+      setRefundTarget(null)
     },
     onError: (err) => toast.error(err.message),
   })
@@ -149,10 +169,35 @@ export default function OwnerAppointmentsPage() {
               onComplete={() => patchStatus.mutate({ id: appt._id, next: 'completed' })}
               onNoShow={() => patchStatus.mutate({ id: appt._id, next: 'no-show' })}
               onCancel={() => cancelMut.mutate(appt._id)}
+              onRefund={(row) => setRefundTarget(row)}
             />
           ))}
         </div>
       )}
+
+      <Dialog open={Boolean(refundTarget)} onOpenChange={(open) => !open && setRefundTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Issue Stripe refund?</DialogTitle>
+            <DialogDescription>
+              This pushes money back through Stripe immediately — Bookr cannot undo it here afterward.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setRefundTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={refundMut.isPending}
+              onClick={() => refundTarget && refundMut.mutate(refundTarget._id)}
+            >
+              {refundMut.isPending ? 'Refunding…' : 'Confirm refund'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
