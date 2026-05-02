@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -66,6 +67,7 @@ export default function AppointmentCard({
   onComplete,
   onNoShow,
   onRefund,
+  notificationsHref,
 }) {
   const future = isAppointmentFuture(appointment)
   const status = appointment.status
@@ -185,6 +187,17 @@ export default function AppointmentCard({
             </Button>
           ) : null}
         </div>
+
+        {viewType === 'client' && notificationsHref ? (
+          <p className="text-sm">
+            <Link
+              to={notificationsHref}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              View notifications
+            </Link>
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

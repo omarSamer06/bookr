@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import * as authService from '@/services/auth.service.js'
 import { AUTH_TOKEN_KEY } from '@/lib/auth-constants'
 import { useBusinessStore } from '@/store/businessStore'
+import { useNotificationStore } from '@/store/notificationStore'
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -23,6 +24,7 @@ export const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem(AUTH_TOKEN_KEY)
     useBusinessStore.getState().clearBusiness()
+    useNotificationStore.getState().clearUnread()
     set({
       user: null,
       token: null,

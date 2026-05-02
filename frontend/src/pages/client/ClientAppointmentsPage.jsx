@@ -94,6 +94,7 @@ export default function ClientAppointmentsPage() {
               key={appt._id}
               appointment={appt}
               viewType="client"
+              notificationsHref={`/notifications?appointmentId=${appt._id}`}
               onCancel={() => cancelMutation.mutate(appt._id)}
               onReschedule={() => setRescheduleTarget(appt)}
             />
@@ -115,6 +116,7 @@ export default function ClientAppointmentsPage() {
                   key={appt._id}
                   appointment={appt}
                   viewType="client"
+                  notificationsHref={`/notifications?appointmentId=${appt._id}`}
                   onCancel={() => cancelMutation.mutate(appt._id)}
                   onReschedule={() => setRescheduleTarget(appt)}
                 />
@@ -130,7 +132,12 @@ export default function ClientAppointmentsPage() {
           ) : (
             <div className="grid gap-4">
               {rows.past.map((appt) => (
-                <AppointmentCard key={appt._id} appointment={appt} viewType="client" />
+                <AppointmentCard
+                  key={appt._id}
+                  appointment={appt}
+                  viewType="client"
+                  notificationsHref={`/notifications?appointmentId=${appt._id}`}
+                />
               ))}
             </div>
           )}
