@@ -6,6 +6,7 @@ import {
   createPaymentIntent as stripeCreatePaymentIntent,
   createRefund,
 } from '../services/stripe.service.js';
+import { sendAppointmentConfirmation } from '../services/notification.service.js';
 
 /** Mirrors the appointment owner lookup so refunds can’t pivot across tenants */
 async function findOwnedBusiness(ownerId) {
@@ -130,15 +131,26 @@ export const handleWebhook = async (req, res) => {
   try {
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object;
-      await Appointment.findOneAndUpdate(
+      const updated = await Appointment.findOneAndUpdate(
         { paymentIntentId: pi.id },
         {
           $set: {
             paymentStatus: 'paid',
             status: 'confirmed',
           },
-        }
+        },
+        { new: true }
       );
+
+      if (updated) {
+        const populated = await Appointment.findById(updated._id)
+          .populate({ path: 'client', select: 'name email phone' })
+          .populate({ path: 'business', select: 'name location phone website' });
+
+        sendAppointmentConfirmation(populated).catch((err) =>
+          console.error('[notify] paid confirmation', err.message)
+        );
+      }
     }
 
     if (event.type === 'payment_intent.payment_failed') {

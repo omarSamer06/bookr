@@ -9,6 +9,11 @@ import {
   utcStartOfDay,
 } from '../services/availability.service.js';
 import { verifyPaymentIntentForAppointmentBooking } from '../services/stripe.service.js';
+import {
+  sendAppointmentCancellation,
+  sendAppointmentConfirmation,
+  sendAppointmentReschedule,
+} from '../services/notification.service.js';
 
 /** Keeps calendar math aligned with how `date` is persisted (UTC midnight) so filters stay honest */
 function parseUtcDateOnly(dateStr) {
@@ -251,6 +256,12 @@ export const createAppointment = async (req, res) => {
     const populated = await Appointment.findById(appointment._id)
       .populate({ path: 'business', select: 'name category location phone' })
       .populate({ path: 'client', select: 'name email phone' });
+
+    if (isFree) {
+      sendAppointmentConfirmation(populated).catch((err) =>
+        console.error('[notify] free confirmation', err.message)
+      );
+    }
 
     return res.status(201).json({
       success: true,
@@ -594,6 +605,10 @@ export const cancelAppointment = async (req, res) => {
       .populate({ path: 'client', select: 'name email phone' })
       .populate({ path: 'cancelledBy', select: 'name email role' });
 
+    sendAppointmentCancellation(populated).catch((err) =>
+      console.error('[notify] cancellation', err.message)
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Appointment cancelled',
@@ -712,11 +727,16 @@ export const rescheduleAppointment = async (req, res) => {
     appointment.status = 'pending';
     appointment.cancelledAt = null;
     appointment.cancelledBy = null;
+    appointment.reminderSent = false;
     await appointment.save();
 
     const populated = await Appointment.findById(appointment._id)
       .populate({ path: 'business', select: 'name category location phone' })
       .populate({ path: 'client', select: 'name email phone' });
+
+    sendAppointmentReschedule(populated).catch((err) =>
+      console.error('[notify] reschedule', err.message)
+    );
 
     return res.status(200).json({
       success: true,
