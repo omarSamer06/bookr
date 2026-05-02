@@ -8,6 +8,7 @@ import {
   isSlotAvailable,
   utcStartOfDay,
 } from '../services/availability.service.js';
+import { verifyPaymentIntentForAppointmentBooking } from '../services/stripe.service.js';
 
 /** Keeps calendar math aligned with how `date` is persisted (UTC midnight) so filters stay honest */
 function parseUtcDateOnly(dateStr) {
@@ -96,7 +97,7 @@ export const getAvailableSlotsHandler = async (req, res) => {
 /** Persists a booking after recomputing availability so stale selections cannot overlap */
 export const createAppointment = async (req, res) => {
   try {
-    const { businessId, serviceId, date, startTime, notes } = req.body;
+    const { businessId, serviceId, date, startTime, notes, paymentIntentId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(String(businessId || ''))) {
       return res.status(400).json({
@@ -185,6 +186,51 @@ export const createAppointment = async (req, res) => {
       });
     }
 
+    const price = Number(service.price);
+    const isFree = Number.isFinite(price) && price === 0;
+
+    let paymentIntentIdNorm = '';
+    let initialPaymentStatus = 'unpaid';
+    let initialStatus = 'pending';
+
+    if (isFree) {
+      initialPaymentStatus = 'paid';
+      initialStatus = 'confirmed';
+    } else {
+      paymentIntentIdNorm = String(paymentIntentId || '').trim();
+      if (!paymentIntentIdNorm) {
+        return res.status(400).json({
+          success: false,
+          message: 'paymentIntentId is required for paid services',
+          data: {},
+        });
+      }
+
+      const amountCents = Math.round(price * 100);
+
+      try {
+        const pi = await verifyPaymentIntentForAppointmentBooking({
+          paymentIntentId: paymentIntentIdNorm,
+          expectedClientId: req.user._id,
+          expectedBusinessId: business._id,
+          expectedServiceId: serviceId,
+          expectedAmountCents: amountCents,
+        });
+
+        if (pi.status === 'succeeded') {
+          initialPaymentStatus = 'paid';
+          initialStatus = 'confirmed';
+        }
+      } catch (err) {
+        const statusCode = err.statusCode && Number.isFinite(err.statusCode) ? err.statusCode : 400;
+        return res.status(statusCode).json({
+          success: false,
+          message: err.message || 'Payment verification failed',
+          data: {},
+        });
+      }
+    }
+
     const appointment = await Appointment.create({
       business: business._id,
       client: req.user._id,
@@ -196,6 +242,9 @@ export const createAppointment = async (req, res) => {
       date: utcStartOfDay(parsedDate),
       startTime: normalizedStart,
       endTime,
+      paymentIntentId: paymentIntentIdNorm,
+      paymentStatus: initialPaymentStatus,
+      status: initialStatus,
       notes: typeof notes === 'string' ? notes.trim().slice(0, 2000) : '',
     });
 

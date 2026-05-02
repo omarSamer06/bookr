@@ -9,6 +9,7 @@ import configurePassport from './config/passport.js';
 import authRoutes from './routes/auth.routes.js';
 import businessRoutes from './routes/business.routes.js';
 import appointmentRoutes from './routes/appointment.routes.js';
+import paymentRoutes, { handleWebhook } from './routes/payment.routes.js';
 
 configurePassport();
 
@@ -26,12 +27,17 @@ app.use(
     credentials: true,
   })
 );
+
+// Stripe signatures bind to the raw bytes — mounting JSON parsers first invalidates verification
+app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json());
 app.use(passport.initialize());
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/businesses', businessRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({

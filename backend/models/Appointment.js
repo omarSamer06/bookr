@@ -86,6 +86,15 @@ const appointmentSchema = new mongoose.Schema(
 );
 
 appointmentSchema.index({ business: 1, date: 1 });
+appointmentSchema.index(
+  { paymentIntentId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      paymentIntentId: { $regex: /^pi_/ },
+    },
+  }
+);
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
