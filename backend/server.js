@@ -3,7 +3,12 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
+import passport from 'passport';
 import connectDB from './config/db.js';
+import configurePassport from './config/passport.js';
+import authRoutes from './routes/auth.routes.js';
+
+configurePassport();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +25,9 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(passport.initialize());
+
+app.use('/api/v1/auth', authRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({
