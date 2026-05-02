@@ -109,7 +109,7 @@ export default function BusinessListPage() {
           {businesses.map((b) => (
             <Link key={b._id} to={`/businesses/${b._id}`} className="group block">
               <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-md">
-                <div className="aspect-[16/10] overflow-hidden bg-muted">
+                <div className="aspect-16/10 overflow-hidden bg-muted">
                   {b.images?.[0] ? (
                     <img src={b.images[0]} alt="" className="size-full object-cover" />
                   ) : (
