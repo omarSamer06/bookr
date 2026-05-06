@@ -7,6 +7,7 @@ import NotificationBootstrap from '@/components/shared/NotificationBootstrap'
 import OwnerBusinessGate from '@/components/shared/OwnerBusinessGate'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import PublicShell from '@/components/shared/PublicShell'
+import ChatWidget from '@/components/chatbot/ChatWidget'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
@@ -142,6 +143,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <ChatWidget />
       </BrowserRouter>
       <Toaster
         position="top-right"

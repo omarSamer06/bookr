@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Clock, Globe, MapPin, Phone } from 'lucide-react'
+import { ArrowLeft, Clock, Globe, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { WEEKDAYS, categoryLabel } from '@/lib/businessConstants'
 import { cn } from '@/lib/utils'
 import { businessQueryKeys, getBusinessById } from '@/services/business.service.js'
+import { useChatbotStore } from '@/store/chatbotStore'
 
 function formatHours(day) {
   if (!day) return '—'
@@ -34,6 +36,7 @@ function DetailSkeleton() {
 /** Read-only summary mirrors booking funnel expectations without leaking owner credentials */
 export default function BusinessDetailPage() {
   const { id } = useParams()
+  const openChat = useChatbotStore((s) => s.openChat)
 
   const {
     data: business,
@@ -72,6 +75,12 @@ export default function BusinessDetailPage() {
 
   const activeServices = (business.services ?? []).filter((s) => s.isActive !== false)
 
+  // Prime the assistant with this business context without opening the window.
+  useEffect(() => {
+    if (!business?._id) return
+    openChat(business._id, { openWindow: false, businessName: business.name })
+  }, [business?._id, business?.name, openChat])
+
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
       <Link
@@ -83,14 +92,14 @@ export default function BusinessDetailPage() {
       </Link>
 
       <section className="relative overflow-hidden rounded-3xl ring-1 ring-gray-100">
-        <div className="relative aspect-[21/9] min-h-[220px] w-full bg-gray-100 sm:min-h-[280px]">
+        <div className="relative aspect-21/9 min-h-[220px] w-full bg-gray-100 sm:min-h-[280px]">
           {business.images?.[0] ? (
             <>
               <img src={business.images[0]} alt="" className="size-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/85 via-violet-900/55 to-purple-800/35" />
+              <div className="absolute inset-0 bg-linear-to-r from-indigo-950/85 via-violet-900/55 to-purple-800/35" />
             </>
           ) : (
-            <div className="flex size-full items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 text-bookr-muted">
+            <div className="flex size-full items-center justify-center bg-linear-to-br from-indigo-100 to-purple-100 text-bookr-muted">
               No hero image yet
             </div>
           )}
@@ -127,7 +136,7 @@ export default function BusinessDetailPage() {
                   {activeServices.map((s) => (
                     <div
                       key={s._id}
-                      className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-indigo-50/40 p-4 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
+                      className="rounded-2xl border border-gray-100 bg-linear-to-br from-white to-indigo-50/40 p-4 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
                     >
                       <p className="font-heading font-bold text-bookr-text">{s.name}</p>
                       {s.description ? <p className="mt-2 text-sm text-bookr-muted">{s.description}</p> : null}
@@ -233,11 +242,22 @@ export default function BusinessDetailPage() {
                 to={`/book/${business._id}`}
                 className={cn(
                   buttonVariants({ size: 'lg' }),
-                  'w-full justify-center bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-sm hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-700'
+                  'w-full justify-center bg-linear-to-r from-indigo-500 to-purple-600 text-white shadow-sm hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-700'
                 )}
               >
                 Book now
               </Link>
+              <button
+                type="button"
+                onClick={() => openChat(business._id, { openWindow: true, businessName: business.name })}
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'lg' }),
+                  'w-full justify-center border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                )}
+              >
+                <MessageCircle className="mr-2 size-4" aria-hidden />
+                Chat with us
+              </button>
             </CardContent>
           </Card>
         </aside>
