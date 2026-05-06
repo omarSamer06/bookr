@@ -7,17 +7,20 @@ import BookingSummary from '@/components/booking/BookingSummary'
 import DatePicker from '@/components/booking/DatePicker'
 import PaymentForm from '@/components/booking/PaymentForm'
 import SlotPicker from '@/components/booking/SlotPicker'
+import RecommendationBanner from '@/components/booking/RecommendationBanner'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { closedWeekdayKeys, todayLocalIsoDate } from '@/lib/bookingUtils'
 import { cn } from '@/lib/utils'
+import useAuth from '@/hooks/useAuth'
 import {
   appointmentQueryKeys,
   createAppointment,
   getAvailableSlots,
 } from '@/services/appointment.service.js'
+import { getRecommendations } from '@/services/recommendation.service.js'
 import { createPaymentIntent } from '@/services/payment.service.js'
 import { businessQueryKeys, getBusinessById } from '@/services/business.service.js'
 
@@ -26,6 +29,7 @@ export default function BookingPage() {
   const { businessId } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { isAuthenticated } = useAuth()
 
   const [step, setStep] = useState(1)
   const [selectedService, setSelectedService] = useState(null)
@@ -85,6 +89,20 @@ export default function BookingPage() {
     queryKey: appointmentQueryKeys.slots(businessId, selectedDate, selectedService?._id),
     queryFn: () => getAvailableSlots(businessId, selectedDate, selectedService._id),
     enabled: Boolean(businessId && selectedDate && selectedService?._id && resolvedStep >= 3),
+    staleTime: 30 * 1000,
+  })
+
+  const {
+    data: recommendations,
+    isLoading: recLoading,
+    isError: recError,
+  } = useQuery({
+    queryKey: ['recommendations', businessId, selectedService?._id, selectedDate],
+    queryFn: () => getRecommendations(businessId, selectedService._id, selectedDate),
+    enabled: Boolean(
+      isAuthenticated && businessId && selectedDate && selectedService?._id && resolvedStep >= 3
+    ),
+    retry: false,
     staleTime: 30 * 1000,
   })
 
@@ -314,6 +332,9 @@ export default function BookingPage() {
               selectedDate={selectedDate}
               onChange={handleDateChange}
               disabledDays={disabledDays}
+              hasRecommendations={Boolean(
+                isAuthenticated && recommendations?.recommended?.length && !recError
+              )}
             />
           ) : null}
 
@@ -329,11 +350,20 @@ export default function BookingPage() {
                   <p className="mt-1 font-semibold text-bookr-text">{selectedService?.name}</p>
                 </div>
               </div>
+              {isAuthenticated &&
+              !recError &&
+              recommendations?.recommended?.some((r) => r.reason === 'Based on your history') ? (
+                <RecommendationBanner />
+              ) : null}
               <SlotPicker
                 slots={slots}
+                recommended={
+                  isAuthenticated && !recError ? recommendations?.recommended ?? null : null
+                }
+                others={isAuthenticated && !recError ? recommendations?.others ?? null : null}
                 selectedSlot={selectedSlot}
                 onSelect={setSelectedSlot}
-                isLoading={slotsLoading}
+                isLoading={isAuthenticated ? slotsLoading || recLoading : slotsLoading}
               />
             </div>
           ) : null}
