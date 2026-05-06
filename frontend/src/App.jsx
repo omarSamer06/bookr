@@ -13,6 +13,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import BusinessDashboardPage from '@/pages/owner/BusinessDashboardPage'
 import BusinessSetupPage from '@/pages/owner/BusinessSetupPage'
+import InsightsDashboardPage from '@/pages/owner/InsightsDashboardPage'
 import BookingPage from '@/pages/client/BookingPage'
 import ClientAppointmentsPage from '@/pages/client/ClientAppointmentsPage'
 import PaymentSuccessPage from '@/pages/client/PaymentSuccessPage'
@@ -130,6 +131,14 @@ export default function App() {
               <Route path="appointments" element={<OwnerAppointmentsPage />} />
               <Route path="setup" element={<BusinessSetupPage />} />
             </Route>
+            <Route
+              path="/dashboard/insights"
+              element={
+                <ProtectedRoute roles={['owner']}>
+                  <InsightsDashboardPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react'
+import { BarChart2, ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import NotificationBell from '@/components/shared/NotificationBell'
 import useAuth from '@/hooks/useAuth'
@@ -40,6 +40,10 @@ function SidebarNav({ onNavigate }) {
   const nav = getSidebarNav(user?.role)
   const dashActive = loc.pathname === '/dashboard'
 
+  const iconMap = {
+    BarChart2,
+  }
+
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Sidebar">
       {nav.map((item) => {
@@ -59,11 +63,16 @@ function SidebarNav({ onNavigate }) {
             </Link>
           )
         }
+
+        const Icon = item.icon ? iconMap[item.icon] : null
         return (
           <NavLink key={`${item.to}-${item.label}`} to={item.to} onClick={onNavigate} className={sidebarLinkClass}>
-            <span className="text-base" aria-hidden>
-              {item.emoji}
-            </span>
+            {Icon ? <Icon className="size-4 text-indigo-700" aria-hidden /> : null}
+            {!Icon ? (
+              <span className="text-base" aria-hidden>
+                {item.emoji}
+              </span>
+            ) : null}
             {item.label}
           </NavLink>
         )
