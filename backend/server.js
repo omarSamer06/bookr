@@ -11,6 +11,7 @@ import businessRoutes from './routes/business.routes.js';
 import appointmentRoutes from './routes/appointment.routes.js';
 import paymentRoutes, { handleWebhook } from './routes/payment.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { registerReminderCron } from './jobs/reminder.job.js';
 
 configurePassport();
@@ -41,6 +42,7 @@ app.use('/api/v1/businesses', businessRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({
