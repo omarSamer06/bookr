@@ -10,7 +10,7 @@ export async function createPaymentIntent(data) {
     if (!res.success) throw new Error(res.message)
     return res.data
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -21,6 +21,6 @@ export async function refundPayment(appointmentId) {
     if (!res.success) throw new Error(res.message)
     return res.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }

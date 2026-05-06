@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft } from 'lucide-react'
 import AppointmentCard from '@/components/booking/AppointmentCard'
 import RescheduleModal from '@/components/booking/RescheduleModal'
 import { buttonVariants } from '@/components/ui/button'
@@ -38,6 +37,26 @@ function partitionUpcomingPast(list) {
   return { upcoming, past }
 }
 
+function AppointmentsSkeleton() {
+  return (
+    <div className="grid gap-4" aria-hidden>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="w-1 shrink-0 rounded-full bg-gray-100" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-full max-w-md animate-pulse rounded bg-gray-50" />
+            <div className="flex gap-2">
+              <div className="h-6 w-20 animate-pulse rounded-full bg-gray-100" />
+              <div className="h-6 w-16 animate-pulse rounded-full bg-gray-100" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Client hub for post-booking actions with query params matching the API contract */
 export default function ClientAppointmentsPage() {
   const qc = useQueryClient()
@@ -67,6 +86,15 @@ export default function ClientAppointmentsPage() {
     return { mode: 'split', ...partitionUpcomingPast(source) }
   }, [appointments, tab])
 
+  const summaryChips = useMemo(() => {
+    if (tab !== 'all' || isLoading || isError) return null
+    const total = appointments.length
+    const nonCancelled = appointments.filter((a) => a.status !== 'cancelled')
+    const { upcoming } = partitionUpcomingPast(nonCancelled)
+    const cancelled = appointments.filter((a) => a.status === 'cancelled').length
+    return { total, upcoming: upcoming.length, cancelled }
+  }, [appointments, tab, isLoading, isError])
+
   const cancelMutation = useMutation({
     mutationFn: (id) => cancelAppointment(id),
     onSuccess: async () => {
@@ -78,14 +106,23 @@ export default function ClientAppointmentsPage() {
 
   const panel = (() => {
     if (isLoading) {
-      return <p className="text-sm text-muted-foreground">Loading appointments…</p>
+      return <AppointmentsSkeleton />
     }
     if (isError) {
-      return <p className="text-sm text-destructive">{error?.message}</p>
+      return (
+        <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/50 px-6 py-12 text-center text-sm font-medium text-red-700">
+          {error?.message}
+        </div>
+      )
     }
     if (rows.mode === 'flat') {
       if (!rows.list.length) {
-        return <p className="text-sm text-muted-foreground">Nothing cancelled yet.</p>
+        return (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
+            <p className="font-heading text-lg font-bold text-bookr-text">Nothing cancelled yet</p>
+            <p className="mt-2 max-w-sm text-sm text-bookr-muted">Cancelled appointments will appear in this tab.</p>
+          </div>
+        )
       }
       return (
         <div className="grid gap-4">
@@ -105,10 +142,12 @@ export default function ClientAppointmentsPage() {
 
     return (
       <>
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground">Upcoming</h2>
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold tracking-wide text-bookr-muted uppercase">Upcoming</h2>
           {!rows.upcoming.length ? (
-            <p className="text-sm text-muted-foreground">No upcoming appointments in this view.</p>
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-sm text-bookr-muted shadow-sm">
+              No upcoming appointments in this view.
+            </div>
           ) : (
             <div className="grid gap-4">
               {rows.upcoming.map((appt) => (
@@ -125,10 +164,12 @@ export default function ClientAppointmentsPage() {
           )}
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground">Past</h2>
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold tracking-wide text-bookr-muted uppercase">Past</h2>
           {!rows.past.length ? (
-            <p className="text-sm text-muted-foreground">No past appointments in this view.</p>
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-sm text-bookr-muted shadow-sm">
+              No past appointments in this view.
+            </div>
           ) : (
             <div className="grid gap-4">
               {rows.past.map((appt) => (
@@ -147,22 +188,34 @@ export default function ClientAppointmentsPage() {
   })()
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 px-4 py-10">
-      <Link
-        to="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
-        Back to dashboard
-      </Link>
+    <div className="mx-auto max-w-4xl space-y-8">
+      <div className="space-y-4">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-bookr-text sm:text-4xl">My appointments</h1>
+          <p className="mt-2 text-sm leading-relaxed text-bookr-muted sm:text-base">
+            Upcoming visits stay grouped — history falls below automatically.
+          </p>
+        </div>
 
-      <div>
-        <h1 className="font-heading text-3xl font-semibold tracking-tight">My appointments</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Upcoming visits stay grouped — history falls below automatically.</p>
+        {summaryChips ? (
+          <div className="flex flex-wrap gap-3">
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-bookr-text shadow-sm">
+              Total <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-800">{summaryChips.total}</span>
+            </span>
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-bookr-text shadow-sm">
+              Upcoming{' '}
+              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-800">{summaryChips.upcoming}</span>
+            </span>
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-bookr-text shadow-sm">
+              Cancelled{' '}
+              <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-red-800">{summaryChips.cancelled}</span>
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="gap-6">
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto border-b border-gray-100">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
@@ -179,7 +232,10 @@ export default function ClientAppointmentsPage() {
         </TabsContent>
       </Tabs>
 
-      <Link to="/businesses" className={cn(buttonVariants({ variant: 'secondary' }), 'inline-flex')}>
+      <Link
+        to="/businesses"
+        className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'inline-flex border-indigo-200 text-indigo-700 hover:bg-indigo-50')}
+      >
         Book another business
       </Link>
 

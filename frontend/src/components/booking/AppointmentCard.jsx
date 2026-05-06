@@ -24,15 +24,15 @@ function formatAppointmentWhen(appointment) {
 function PaymentStatusBadge({ paymentStatus }) {
   const ps = paymentStatus || 'unpaid'
   const styles = {
-    unpaid: 'border-red-500/35 bg-red-500/10 text-red-700 dark:text-red-300',
-    paid: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    refunded: 'border-muted-foreground/40 bg-muted text-muted-foreground',
+    unpaid: 'bg-red-100 text-red-700 border-0',
+    paid: 'bg-emerald-100 text-emerald-700 border-0',
+    refunded: 'bg-gray-100 text-gray-600 border-0',
   }
 
   const label = ps === 'unpaid' ? 'Unpaid' : ps === 'paid' ? 'Paid' : ps === 'refunded' ? 'Refunded' : ps
 
   return (
-    <Badge variant="outline" className={cn('capitalize', styles[ps] ?? styles.unpaid)}>
+    <Badge variant="outline" className={cn('rounded-full px-3 py-1 text-xs font-semibold capitalize', styles[ps] ?? styles.unpaid)}>
       {label}
     </Badge>
   )
@@ -41,20 +41,28 @@ function PaymentStatusBadge({ paymentStatus }) {
 /** Centralizes badge chroma so owners + clients read risk consistently */
 function StatusBadge({ status }) {
   const styles = {
-    pending: 'border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-    confirmed: 'border-sky-500/35 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-    completed: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-    cancelled: 'border-red-500/35 bg-red-500/10 text-red-700 dark:text-red-300',
-    'no-show': 'border-muted-foreground/40 bg-muted text-muted-foreground',
+    pending: 'bg-amber-100 text-amber-700 border-0',
+    confirmed: 'bg-indigo-100 text-indigo-700 border-0',
+    completed: 'bg-emerald-100 text-emerald-700 border-0',
+    cancelled: 'bg-red-100 text-red-700 border-0',
+    'no-show': 'bg-gray-100 text-gray-600 border-0',
   }
 
   const label = status === 'no-show' ? 'No-show' : status
 
   return (
-    <Badge variant="outline" className={cn('capitalize', styles[status] ?? '')}>
+    <Badge variant="outline" className={cn('rounded-full px-3 py-1 text-xs font-semibold capitalize', styles[status] ?? '')}>
       {label}
     </Badge>
   )
+}
+
+const statusBorder = {
+  pending: 'border-l-amber-400',
+  confirmed: 'border-l-indigo-500',
+  completed: 'border-l-emerald-500',
+  cancelled: 'border-l-red-500',
+  'no-show': 'border-l-gray-400',
 }
 
 /** Shared appointment chrome avoids drifting layouts between dashboards */
@@ -80,12 +88,12 @@ export default function AppointmentCard({
   const subtitle =
     viewType === 'owner' ? (
       <span className="inline-flex items-center gap-1">
-        <Mail className="size-3.5 text-muted-foreground" aria-hidden />
+        <Mail className="size-3.5 text-bookr-muted" aria-hidden />
         {appointment.client?.email ?? '—'}
       </span>
     ) : (
       <span className="inline-flex items-center gap-1">
-        <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
+        <MapPin className="size-3.5 text-bookr-muted" aria-hidden />
         {[appointment.business?.location?.city, appointment.business?.location?.country]
           .filter(Boolean)
           .join(' · ') || 'Location TBD'}
@@ -120,36 +128,49 @@ export default function AppointmentCard({
     appointment.paymentStatus === 'paid' &&
     status === 'cancelled'
 
+  const ownerInitial = (appointment.client?.name?.trim?.()?.[0] ?? appointment.client?.email?.[0] ?? '?').toUpperCase()
+
   return (
-    <Card className="border-border/70">
-      <CardContent className="space-y-3 pt-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              {viewType === 'owner' ? (
-                <User className="size-4 text-muted-foreground" aria-hidden />
-              ) : null}
-              <p className="font-heading text-base font-semibold">{title}</p>
-              <StatusBadge status={status} />
-              <PaymentStatusBadge paymentStatus={appointment.paymentStatus} />
+    <Card
+      className={cn(
+        'overflow-hidden border-gray-100 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md',
+        'border-l-4',
+        statusBorder[status] ?? 'border-l-gray-300'
+      )}
+    >
+      <CardContent className="space-y-4 p-6 pt-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 gap-3">
+            {viewType === 'owner' ? (
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-sm font-bold text-indigo-800">
+                {ownerInitial}
+              </span>
+            ) : null}
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {viewType === 'owner' ? <User className="size-4 text-bookr-muted lg:hidden" aria-hidden /> : null}
+                <p className="font-heading text-lg font-bold text-bookr-text">{title}</p>
+                <StatusBadge status={status} />
+                <PaymentStatusBadge paymentStatus={appointment.paymentStatus} />
+              </div>
+              <p className="text-sm text-bookr-muted">{subtitle}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
           <div className="text-right text-sm">
-            <p className="font-medium text-foreground">${Number(appointment.service?.price ?? 0).toFixed(2)}</p>
-            <p className="text-muted-foreground">{appointment.service?.duration ?? '—'} min</p>
+            <p className="font-heading font-bold text-indigo-700 tabular-nums">${Number(appointment.service?.price ?? 0).toFixed(2)}</p>
+            <p className="text-bookr-muted">{appointment.service?.duration ?? '—'} min</p>
           </div>
         </div>
 
-        <div className="rounded-lg bg-muted/40 px-3 py-2 text-sm">
-          <p className="font-medium">{appointment.service?.name ?? 'Service'}</p>
-          <p className="mt-1 inline-flex items-center gap-2 text-muted-foreground">
-            <CalendarClock className="size-4 shrink-0" aria-hidden />
+        <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 text-sm">
+          <p className="font-semibold text-bookr-text">{appointment.service?.name ?? 'Service'}</p>
+          <p className="mt-2 inline-flex items-center gap-2 text-bookr-muted">
+            <CalendarClock className="size-4 shrink-0 text-indigo-400" aria-hidden />
             {formatAppointmentWhen(appointment)}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           {showClientCancel ? (
             <Button type="button" variant="outline" size="sm" onClick={() => onCancel(appointment)}>
               Cancel
@@ -190,10 +211,7 @@ export default function AppointmentCard({
 
         {viewType === 'client' && notificationsHref ? (
           <p className="text-sm">
-            <Link
-              to={notificationsHref}
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
+            <Link to={notificationsHref} className="font-semibold text-indigo-600 underline-offset-4 hover:underline">
               View notifications
             </Link>
           </p>

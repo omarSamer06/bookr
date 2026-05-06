@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,17 @@ const defaultDay = () => ({
   close: '17:00',
 })
 
+function buildHours(initialWorkingHours) {
+  const base = {}
+  for (const { key } of WEEKDAYS) {
+    base[key] = {
+      ...defaultDay(),
+      ...(initialWorkingHours?.[key] ?? {}),
+    }
+  }
+  return base
+}
+
 /** Single PATCH batches weekly rhythm changes so slots stay consistent server-side */
 export default function WorkingHoursForm({
   initialWorkingHours,
@@ -18,29 +30,17 @@ export default function WorkingHoursForm({
   onSubmit,
   isPending,
 }) {
-  const [hours, setHours] = useState(() => {
-    const base = {}
-    for (const { key } of WEEKDAYS) {
-      base[key] = {
-        ...defaultDay(),
-        ...(initialWorkingHours?.[key] ?? {}),
-      }
-    }
-    return base
-  })
+  const [hours, setHours] = useState(() => buildHours(initialWorkingHours))
   const [slotDuration, setSlotDuration] = useState(String(initialSlotDuration ?? 30))
 
-  useEffect(() => {
-    const base = {}
-    for (const { key } of WEEKDAYS) {
-      base[key] = {
-        ...defaultDay(),
-        ...(initialWorkingHours?.[key] ?? {}),
-      }
-    }
-    setHours(base)
+  const [prevWh, setPrevWh] = useState(initialWorkingHours)
+  const [prevSd, setPrevSd] = useState(initialSlotDuration)
+  if (initialWorkingHours !== prevWh || initialSlotDuration !== prevSd) {
+    setPrevWh(initialWorkingHours)
+    setPrevSd(initialSlotDuration)
+    setHours(buildHours(initialWorkingHours))
     setSlotDuration(String(initialSlotDuration ?? 30))
-  }, [initialWorkingHours, initialSlotDuration])
+  }
 
   const updateDay = (key, patch) => {
     setHours((prev) => ({
@@ -62,7 +62,7 @@ export default function WorkingHoursForm({
         {WEEKDAYS.map(({ key, label }) => (
           <div
             key={key}
-            className="flex flex-col gap-3 rounded-lg border border-border/80 p-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="flex min-w-[140px] items-center gap-2">
               <Checkbox
@@ -70,7 +70,7 @@ export default function WorkingHoursForm({
                 onCheckedChange={(v) => updateDay(key, { isOff: Boolean(v) })}
               />
               <span className="text-sm font-medium">{label}</span>
-              <span className="text-xs text-muted-foreground">closed</span>
+              <span className="text-xs text-bookr-muted">closed</span>
             </div>
             <div className="flex flex-1 flex-wrap items-end gap-3 sm:justify-end">
               <div className="grid gap-1">
@@ -112,13 +112,18 @@ export default function WorkingHoursForm({
           value={slotDuration}
           onChange={(e) => setSlotDuration(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">
-          Smallest bookable increment customers will see later.
-        </p>
+        <p className="text-xs text-bookr-muted">Smallest bookable increment customers will see later.</p>
       </div>
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? 'Saving hours…' : 'Save schedule'}
+      <Button type="submit" size="lg" disabled={isPending}>
+        {isPending ? (
+          <>
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            Saving hours…
+          </>
+        ) : (
+          'Save schedule'
+        )}
       </Button>
     </form>
   )

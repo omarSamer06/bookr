@@ -34,11 +34,7 @@ export default function DatePicker({
 
   return (
     <div className={cn('grid gap-2', className)}>
-      {label ? (
-        <Label htmlFor={id} className="text-muted-foreground">
-          {label}
-        </Label>
-      ) : null}
+      {label ? <Label htmlFor={id}>{label}</Label> : null}
       <Input id={id} type="date" min={min} value={selectedDate ?? ''} onChange={handleChange} />
     </div>
   )

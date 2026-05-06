@@ -28,7 +28,7 @@ export async function getBusinesses(filters = {}) {
     if (!data.success) throw new Error(data.message)
     return data.data.businesses
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -38,7 +38,7 @@ export async function getBusinessById(id) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -50,7 +50,7 @@ export async function getMyBusiness() {
     return data.data.business
   } catch (err) {
     if (err.response?.status === 404) return null
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -60,7 +60,7 @@ export async function createBusiness(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -70,7 +70,7 @@ export async function updateBusiness(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -80,7 +80,7 @@ export async function uploadImages(formData) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -90,7 +90,7 @@ export async function deleteImage(url) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -100,7 +100,7 @@ export async function addService(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -110,7 +110,7 @@ export async function updateService(serviceId, payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -120,7 +120,7 @@ export async function deleteService(serviceId) {
     if (!data.success) throw new Error(data.message)
     return data.data.business
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 

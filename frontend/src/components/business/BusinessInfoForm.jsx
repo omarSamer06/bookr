@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,8 +25,9 @@ export default function BusinessInfoForm({
   const [phone, setPhone] = useState('')
   const [website, setWebsite] = useState('')
 
-  useEffect(() => {
-    if (!initialValues) return
+  const [prevInitial, setPrevInitial] = useState()
+  if (initialValues && initialValues !== prevInitial) {
+    setPrevInitial(initialValues)
     setName(initialValues.name ?? '')
     setDescription(initialValues.description ?? '')
     setCategory(initialValues.category ?? 'beauty')
@@ -35,7 +37,7 @@ export default function BusinessInfoForm({
     setCountry(loc.country ?? '')
     setPhone(initialValues.phone ?? '')
     setWebsite(initialValues.website ?? '')
-  }, [initialValues])
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -84,8 +86,8 @@ export default function BusinessInfoForm({
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className={cn(
-            'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-colors',
-            'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30'
+            'flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-bookr-text shadow-sm outline-none transition-all',
+            'focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-300/80'
           )}
         >
           {BUSINESS_CATEGORIES.map((c) => (
@@ -122,8 +124,15 @@ export default function BusinessInfoForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? 'Saving…' : submitLabel}
+      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isPending}>
+        {isPending ? (
+          <>
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            Saving…
+          </>
+        ) : (
+          submitLabel
+        )}
       </Button>
     </form>
   )

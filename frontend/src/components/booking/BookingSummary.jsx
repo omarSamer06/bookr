@@ -15,44 +15,44 @@ export default function BookingSummary({
     Number(priceAmount) === 0 ? 'Free' : `$${Number(priceAmount ?? 0).toFixed(2)}`
 
   return (
-    <Card className="border-border/70 bg-muted/15">
+    <Card className="border-gray-100 bg-gradient-to-br from-white to-indigo-50/50 shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Booking summary</CardTitle>
+        <CardTitle>Booking summary</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="space-y-4 text-sm">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
-            <p className="text-muted-foreground">Business</p>
-            <p className="font-medium">{businessName}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Business</p>
+            <p className="mt-1 font-semibold text-bookr-text">{businessName}</p>
           </div>
           <div className="text-right">
-            <p className="text-muted-foreground">Price</p>
-            <p className="font-semibold text-foreground">{priceLabel}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Price</p>
+            <p className="mt-1 font-heading text-lg font-bold text-indigo-700 tabular-nums">{priceLabel}</p>
           </div>
         </div>
-        <Separator />
-        <div className="grid gap-2 sm:grid-cols-2">
+        <Separator className="bg-gray-100" />
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-muted-foreground">Service</p>
-            <p className="font-medium">{serviceName}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Service</p>
+            <p className="mt-1 font-medium text-bookr-text">{serviceName}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Duration</p>
-            <p className="font-medium">{durationMinutes ?? '—'} min</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Duration</p>
+            <p className="mt-1 font-medium text-bookr-text">{durationMinutes ?? '—'} min</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-muted-foreground">When</p>
-            <p className="font-medium">
+            <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">When</p>
+            <p className="mt-1 font-medium text-bookr-text">
               {dateStr} · {timeStr}
             </p>
           </div>
         </div>
         {notes?.trim() ? (
           <>
-            <Separator />
+            <Separator className="bg-gray-100" />
             <div>
-              <p className="text-muted-foreground">Notes</p>
-              <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{notes.trim()}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Notes</p>
+              <p className="mt-2 whitespace-pre-wrap text-bookr-muted">{notes.trim()}</p>
             </div>
           </>
         ) : null}

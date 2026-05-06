@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Globe } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import GoogleMark from '@/components/shared/GoogleMark'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -54,23 +55,28 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border/80 shadow-lg">
-        <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>Choose how you’ll use Bookr.</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-bookr-warm via-bookr-lavender/40 to-bookr-warm p-4">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-16 right-[10%] h-64 w-64 rounded-full bg-purple-400/15 blur-3xl" />
+      </div>
+      <Card className="relative w-full max-w-md border-gray-100 shadow-md">
+        <CardHeader className="space-y-4 text-center">
+          <Link
+            to="/"
+            className="font-heading text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent"
+          >
+            Bookr
+          </Link>
+          <div>
+            <CardTitle className="text-2xl">Create account</CardTitle>
+            <CardDescription className="mt-2">Choose how you’ll use Bookr.</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -102,40 +108,49 @@ export default function RegisterPage() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className={cn(
-                  'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-colors',
-                  'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                  'disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30'
+                  'flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-bookr-text shadow-sm outline-none transition-all',
+                  'focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-300/80',
+                  'disabled:cursor-not-allowed disabled:opacity-50'
                 )}
               >
                 <option value="client">{roleLabels.client}</option>
                 <option value="owner">{roleLabels.owner}</option>
               </select>
             </div>
-            <Button type="submit" className="w-full" disabled={bootLoading || isSubmitting}>
-              {isSubmitting ? 'Creating account…' : 'Register'}
+            <Button type="submit" className="w-full" size="lg" disabled={bootLoading || isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Creating account…
+                </>
+              ) : (
+                'Register'
+              )}
             </Button>
           </form>
 
-          <div className="relative text-center text-xs text-muted-foreground after:absolute after:inset-y-1/2 after:left-0 after:right-0 after:z-0 after:h-px after:bg-border">
-            <span className="relative z-10 bg-card px-2">or</span>
+          <div className="relative text-center text-xs text-bookr-muted after:absolute after:inset-y-1/2 after:left-0 after:right-0 after:z-0 after:h-px after:bg-gray-200">
+            <span className="relative z-10 bg-white px-3 font-medium">or</span>
           </div>
 
           <a
             href={googleHref}
             className={cn(
-              buttonVariants({ variant: 'outline' }),
-              'w-full justify-center gap-2 no-underline'
+              buttonVariants({ variant: 'outline', size: 'lg' }),
+              'w-full justify-center gap-3 border-gray-200 bg-white no-underline hover:bg-gray-50'
             )}
           >
-            <Globe className="size-4" aria-hidden />
+            <GoogleMark />
             Continue with Google
           </a>
         </CardContent>
-        <CardFooter className="justify-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link to="/login" className="ml-1 font-medium text-primary underline-offset-4 hover:underline">
-            Log in
-          </Link>
+        <CardFooter className="flex flex-col gap-1 text-center text-sm text-bookr-muted">
+          <span>
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-indigo-600 underline-offset-4 hover:underline">
+              Log in
+            </Link>
+          </span>
         </CardFooter>
       </Card>
     </div>

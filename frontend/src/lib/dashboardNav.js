@@ -1,0 +1,32 @@
+/** Sidebar entries stay declarative so role switches don’t fork layout markup */
+export function getSidebarNav(role) {
+  if (role === 'owner') {
+    return [
+      { to: '/dashboard', label: 'Home', emoji: '🏠' },
+      { to: '/dashboard/business', label: 'My Business', emoji: '🏢' },
+      { to: '/dashboard/business/appointments', label: 'Appointments', emoji: '📅' },
+      { to: '/notifications', label: 'Notifications', emoji: '🔔' },
+      { to: '/dashboard', label: 'Profile', emoji: '👤' },
+    ]
+  }
+  return [
+    { to: '/dashboard', label: 'Home', emoji: '🏠' },
+    { to: '/businesses', label: 'Browse Businesses', emoji: '🔍' },
+    { to: '/dashboard/appointments', label: 'My Appointments', emoji: '📅' },
+    { to: '/notifications', label: 'Notifications', emoji: '🔔' },
+    { to: '/dashboard', label: 'Profile', emoji: '👤' },
+  ]
+}
+
+/** Maps authenticated routes to header titles without coupling pages to context */
+export function getDashboardPageTitle(pathname) {
+  if (pathname === '/dashboard') return 'Home'
+  if (pathname === '/dashboard/appointments') return 'My appointments'
+  if (pathname === '/notifications') return 'Notifications'
+  if (pathname === '/payment/success') return 'Payment'
+  if (pathname.startsWith('/book/')) return 'Book appointment'
+  if (pathname === '/dashboard/business/setup') return 'Business setup'
+  if (pathname === '/dashboard/business/appointments') return 'Appointments'
+  if (pathname === '/dashboard/business') return 'My business'
+  return 'Bookr'
+}

@@ -46,4 +46,5 @@ function Badge({
   });
 }
 
+/* eslint-disable react-refresh/only-export-components -- cva variants consumed outside this module */
 export { Badge, badgeVariants }

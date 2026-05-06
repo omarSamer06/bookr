@@ -76,16 +76,16 @@ function PaymentFormInner({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
-      <div className="rounded-xl border border-border/70 bg-card/40 px-4 py-3">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total due now</p>
-        <p className={cn('mt-1 font-heading text-2xl font-semibold tabular-nums tracking-tight')}>{formatted}</p>
+      <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-indigo-50/80 to-purple-50/50 p-5 shadow-sm">
+        <p className="text-xs font-semibold tracking-wide text-indigo-700 uppercase">Total due now</p>
+        <p className={cn('mt-2 font-heading text-3xl font-bold tabular-nums tracking-tight text-bookr-text')}>{formatted}</p>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-background/80 p-3 ring-1 ring-border/40">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <PaymentElement />
       </div>
 
-      <Button type="submit" className="w-full gap-2 sm:w-auto" disabled={!stripe || busy || disableSubmit}>
+      <Button type="submit" className="w-full gap-2 sm:w-auto" size="lg" disabled={!stripe || busy || disableSubmit}>
         {busy ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -115,9 +115,14 @@ export default function PaymentForm({
       options={{
         clientSecret,
         appearance: {
-          theme: 'night',
+          theme: 'stripe',
           variables: {
-            borderRadius: '10px',
+            borderRadius: '12px',
+            colorPrimary: '#6366f1',
+            colorBackground: '#ffffff',
+            colorText: '#1e1b4b',
+            colorDanger: '#ef4444',
+            fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
           },
         },
       }}

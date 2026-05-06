@@ -1,5 +1,4 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import useAuth from '@/hooks/useAuth'
 
 export default function ProtectedRoute({ children, roles }) {
@@ -8,8 +7,9 @@ export default function ProtectedRoute({ children, roles }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 py-16">
+        <div className="h-12 w-full max-w-md animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-gray-100" />
+        <div className="h-4 w-48 animate-pulse rounded-lg bg-indigo-100/80" />
       </div>
     )
   }

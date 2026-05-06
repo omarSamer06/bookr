@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Loader2 } from 'lucide-react'
 import BookingSummary from '@/components/booking/BookingSummary'
 import DatePicker from '@/components/booking/DatePicker'
 import PaymentForm from '@/components/booking/PaymentForm'
@@ -34,6 +34,7 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('')
 
   const isPaidService = Number(selectedService?.price) > 0
+  const resolvedStep = !isPaidService && step === 5 ? 4 : step
 
   const stepLabels = useMemo(() => {
     const row = [
@@ -45,10 +46,6 @@ export default function BookingPage() {
     if (isPaidService) row.push({ k: 5, label: 'Payment' })
     return row
   }, [isPaidService])
-
-  useEffect(() => {
-    if (!isPaidService && step === 5) setStep(4)
-  }, [isPaidService, step])
 
   const {
     data: business,
@@ -69,9 +66,15 @@ export default function BookingPage() {
 
   const disabledDays = useMemo(() => closedWeekdayKeys(business?.workingHours), [business?.workingHours])
 
-  useEffect(() => {
+  const handleSelectService = (s) => {
+    setSelectedService(s)
     setSelectedSlot('')
-  }, [selectedDate, selectedService?._id])
+  }
+
+  const handleDateChange = (d) => {
+    setSelectedDate(d)
+    setSelectedSlot('')
+  }
 
   const {
     data: slots = [],
@@ -81,7 +84,7 @@ export default function BookingPage() {
   } = useQuery({
     queryKey: appointmentQueryKeys.slots(businessId, selectedDate, selectedService?._id),
     queryFn: () => getAvailableSlots(businessId, selectedDate, selectedService._id),
-    enabled: Boolean(businessId && selectedDate && selectedService?._id && step >= 3),
+    enabled: Boolean(businessId && selectedDate && selectedService?._id && resolvedStep >= 3),
     staleTime: 30 * 1000,
   })
 
@@ -167,25 +170,26 @@ export default function BookingPage() {
 
   if (!businessId) {
     return (
-      <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-        Missing business id.
-      </div>
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-bookr-muted">Missing business id.</div>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-        Loading business…
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-10" aria-busy>
+        <div className="h-5 w-40 animate-pulse rounded-lg bg-gray-200" />
+        <div className="h-10 max-w-md animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-4 max-w-md animate-pulse rounded bg-gray-100" />
+        <div className="h-48 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-gray-100" />
       </div>
     )
   }
 
   if (isError || !business) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-destructive">{error?.message ?? 'Business not found.'}</p>
-        <Link to="/businesses" className={cn(buttonVariants(), 'mt-4 inline-flex')}>
+      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center">
+        <p className="text-sm font-medium text-red-600">{error?.message ?? 'Business not found.'}</p>
+        <Link to="/businesses" className={cn(buttonVariants(), 'mt-6')}>
           Back to directory
         </Link>
       </div>
@@ -194,9 +198,9 @@ export default function BookingPage() {
 
   if (!activeServices.length) {
     return (
-      <div className="mx-auto max-w-lg space-y-4 px-4 py-12 text-center">
-        <p className="text-sm text-muted-foreground">This business hasn’t published bookable services yet.</p>
-        <Link to={`/businesses/${businessId}`} className={cn(buttonVariants({ variant: 'secondary' }), 'inline-flex')}>
+      <div className="mx-auto flex max-w-lg flex-col items-center gap-4 px-4 py-16 text-center">
+        <p className="text-sm text-bookr-muted">This business hasn’t published bookable services yet.</p>
+        <Link to={`/businesses/${businessId}`} className={cn(buttonVariants({ variant: 'outline' }), 'inline-flex')}>
           Back to profile
         </Link>
       </div>
@@ -204,89 +208,96 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 px-4 py-10">
+    <div className="mx-auto max-w-2xl space-y-8 px-4 py-8 sm:py-10">
       <Link
         to={`/businesses/${businessId}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
       >
-        <ArrowLeft className="size-3.5" aria-hidden />
+        <ArrowLeft className="size-4" aria-hidden />
         Back to business
       </Link>
 
       <div>
-        <h1 className="font-heading text-3xl font-semibold tracking-tight">Book {business.name}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-bookr-text sm:text-4xl">Book {business.name}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-bookr-muted sm:text-base">
           Paid visits authorize through Stripe — free visits skip checkout entirely.
         </p>
       </div>
 
-      <ol className="flex flex-wrap gap-3">
+      <ol className="flex flex-wrap gap-2 sm:gap-3">
         {stepLabels.map(({ k, label }) => (
           <li
             key={k}
             className={cn(
-              'flex min-w-[140px] flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-sm',
-              step === k ? 'border-primary/60 bg-primary/5' : 'border-border/70 text-muted-foreground'
+              'flex min-w-[120px] flex-1 items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+              resolvedStep === k
+                ? 'border-indigo-300 bg-indigo-50 text-indigo-900 shadow-sm'
+                : resolvedStep > k
+                  ? 'border-emerald-200 bg-emerald-50/80 text-emerald-900'
+                  : 'border-gray-200 bg-white text-bookr-muted'
             )}
           >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-              {step > k ? <Check className="size-4" aria-hidden /> : k}
+            <span
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                resolvedStep > k ? 'bg-emerald-600 text-white' : resolvedStep === k ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-bookr-muted'
+              )}
+            >
+              {resolvedStep > k ? <Check className="size-4" aria-hidden /> : k}
             </span>
-            <span className="font-medium text-foreground">{label}</span>
+            <span className="font-semibold">{label}</span>
           </li>
         ))}
       </ol>
 
-      <Card className="border-border/80">
+      <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <CardTitle>
-            {step === 1 ? 'Choose a service' : null}
-            {step === 2 ? 'Choose a date' : null}
-            {step === 3 ? 'Choose a time' : null}
-            {step === 4 ? 'Review your visit' : null}
-            {step === 5 ? 'Pay securely' : null}
+            {resolvedStep === 1 ? 'Choose a service' : null}
+            {resolvedStep === 2 ? 'Choose a date' : null}
+            {resolvedStep === 3 ? 'Choose a time' : null}
+            {resolvedStep === 4 ? 'Review your visit' : null}
+            {resolvedStep === 5 ? 'Pay securely' : null}
           </CardTitle>
           <CardDescription>
-            {step === 1 ? 'Pricing and duration freeze on the next step exactly as shown here.' : null}
-            {step === 2 ? 'Closed weekdays are blocked to match this business profile.' : null}
-            {step === 3 ? 'Only openings returned by Bookr right now can be claimed.' : null}
-            {step === 4
+            {resolvedStep === 1 ? 'Pricing and duration freeze on the next step exactly as shown here.' : null}
+            {resolvedStep === 2 ? 'Closed weekdays are blocked to match this business profile.' : null}
+            {resolvedStep === 3 ? 'Only openings returned by Bookr right now can be claimed.' : null}
+            {resolvedStep === 4
               ? isPaidService
                 ? 'Confirm details — Stripe collects the card on the next step.'
                 : 'No card required for complimentary services.'
               : null}
-            {step === 5
+            {resolvedStep === 5
               ? 'Card data stays inside Stripe Elements — Bookr never sees your full PAN or CVC.'
               : null}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {step === 1 ? (
-            <div className="grid gap-2">
-              <Label className="text-muted-foreground">Services</Label>
-              <div className="grid gap-2">
+          {resolvedStep === 1 ? (
+            <div className="grid gap-3">
+              <Label>Services</Label>
+              <div className="grid gap-3 sm:grid-cols-2">
                 {activeServices.map((s) => (
                   <button
                     key={s._id}
                     type="button"
-                    onClick={() => setSelectedService(s)}
+                    onClick={() => handleSelectService(s)}
                     className={cn(
-                      'rounded-lg border px-3 py-3 text-left transition-colors',
+                      'rounded-2xl border p-4 text-left transition-all duration-200',
                       selectedService?._id === s._id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border/70 hover:bg-muted/40'
+                        ? 'border-indigo-500 bg-indigo-50 shadow-sm ring-1 ring-indigo-200'
+                        : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50'
                     )}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="font-medium">{s.name}</p>
-                        {s.description ? (
-                          <p className="mt-1 text-sm text-muted-foreground">{s.description}</p>
-                        ) : null}
+                        <p className="font-heading font-bold text-bookr-text">{s.name}</p>
+                        {s.description ? <p className="mt-2 text-sm text-bookr-muted">{s.description}</p> : null}
                       </div>
                       <div className="text-right text-sm">
-                        <p className="font-semibold">${Number(s.price).toFixed(2)}</p>
-                        <p className="text-muted-foreground">{s.duration} min</p>
+                        <p className="font-bold text-indigo-700">${Number(s.price).toFixed(2)}</p>
+                        <p className="text-bookr-muted">{s.duration} min</p>
                       </div>
                     </div>
                   </button>
@@ -295,27 +306,27 @@ export default function BookingPage() {
             </div>
           ) : null}
 
-          {step === 2 ? (
+          {resolvedStep === 2 ? (
             <DatePicker
               id="bk-date"
               label="Appointment date"
               minDate={todayLocalIsoDate()}
               selectedDate={selectedDate}
-              onChange={setSelectedDate}
+              onChange={handleDateChange}
               disabledDays={disabledDays}
             />
           ) : null}
 
-          {step === 3 ? (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-end justify-between gap-3">
+          {resolvedStep === 3 ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Selected day</p>
-                  <p className="font-medium">{selectedDate}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Selected day</p>
+                  <p className="mt-1 font-semibold text-bookr-text">{selectedDate}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Service</p>
-                  <p className="font-medium">{selectedService?.name}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">Service</p>
+                  <p className="mt-1 font-semibold text-bookr-text">{selectedService?.name}</p>
                 </div>
               </div>
               <SlotPicker
@@ -327,7 +338,7 @@ export default function BookingPage() {
             </div>
           ) : null}
 
-          {step === 4 ? (
+          {resolvedStep === 4 ? (
             <div className="space-y-6">
               <BookingSummary
                 businessName={business.name}
@@ -339,9 +350,7 @@ export default function BookingPage() {
               />
 
               <div className="grid gap-2">
-                <Label htmlFor="bk-notes" className="text-muted-foreground">
-                  Notes (optional)
-                </Label>
+                <Label htmlFor="bk-notes">Notes (optional)</Label>
                 <Textarea
                   id="bk-notes"
                   value={notes}
@@ -366,7 +375,10 @@ export default function BookingPage() {
               />
 
               {checkoutLoading ? (
-                <p className="text-sm text-muted-foreground">Preparing secure checkout…</p>
+                <div className="space-y-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm" aria-busy>
+                  <div className="h-4 w-48 animate-pulse rounded bg-gray-100" />
+                  <div className="h-32 animate-pulse rounded-xl bg-gray-50" />
+                </div>
               ) : checkoutError ? (
                 <div className="space-y-2">
                   <p className="text-sm text-destructive">Could not start checkout.</p>
@@ -390,24 +402,24 @@ export default function BookingPage() {
             </div>
           ) : null}
 
-          {step !== 5 ? (
+          {resolvedStep !== 5 ? (
             <div className="flex flex-wrap justify-between gap-2">
               <Button
                 type="button"
                 variant="outline"
-                disabled={step === 1 || bookMutation.isPending}
+                disabled={resolvedStep === 1 || bookMutation.isPending}
                 onClick={() => setStep((s) => Math.max(1, s - 1))}
               >
                 Back
               </Button>
 
-              {step < 4 ? (
+              {resolvedStep < 4 ? (
                 <Button
                   type="button"
                   onClick={() => {
-                    if (step === 1) nextFromStep1()
-                    if (step === 2) nextFromStep2()
-                    if (step === 3) nextFromStep3()
+                    if (resolvedStep === 1) nextFromStep1()
+                    if (resolvedStep === 2) nextFromStep2()
+                    if (resolvedStep === 3) nextFromStep3()
                   }}
                 >
                   Continue
@@ -418,21 +430,25 @@ export default function BookingPage() {
                   onClick={() => (isPaidService ? setStep(5) : bookMutation.mutate({}))}
                   disabled={bookMutation.isPending}
                 >
-                  {bookMutation.isPending ? 'Booking…' : isPaidService ? 'Continue to payment' : 'Confirm booking'}
+                  {bookMutation.isPending ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Booking…
+                    </>
+                  ) : isPaidService ? (
+                    'Continue to payment'
+                  ) : (
+                    'Confirm booking'
+                  )}
                 </Button>
               )}
             </div>
           ) : (
-            <div className="flex flex-wrap justify-between gap-2 border-t border-border/60 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={bookMutation.isPending}
-                onClick={() => setStep(4)}
-              >
+            <div className="flex flex-wrap justify-between gap-2 border-t border-gray-100 pt-6">
+              <Button type="button" variant="outline" disabled={bookMutation.isPending} onClick={() => setStep(4)}>
                 Back to review
               </Button>
-              <p className="text-xs text-muted-foreground self-center">Submit the payment using the button above.</p>
+              <p className="self-center text-xs text-bookr-muted">Submit the payment using the button above.</p>
             </div>
           )}
         </CardContent>

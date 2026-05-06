@@ -20,7 +20,7 @@ export default function NotificationBell() {
       type="button"
       variant="ghost"
       size="icon"
-      className="relative shrink-0"
+      className="relative size-10 shrink-0 rounded-full text-indigo-700 hover:bg-indigo-50"
       aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} recent` : 'Notifications'}
       onClick={onClick}
     >
@@ -29,7 +29,7 @@ export default function NotificationBell() {
         <span
           className={cn(
             'absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1',
-            'bg-destructive text-[10px] font-semibold text-destructive-foreground'
+            'bg-gradient-to-r from-indigo-500 to-purple-600 text-[10px] font-bold text-white shadow-sm'
           )}
         >
           {unreadCount > 99 ? '99+' : unreadCount}

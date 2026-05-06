@@ -1,17 +1,18 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Navigate, useLocation } from 'react-router-dom'
 import useAuth from '@/hooks/useAuth'
-import Navbar from '@/components/shared/Navbar'
+import DashboardShell from '@/components/shared/DashboardShell'
 
-/** Centralizes the chrome shell so every protected surface shares one nav + auth gate */
+/** Centralizes auth gate; dashboard chrome lives in DashboardShell */
 export default function AuthShell() {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bookr-warm px-4">
+        <div className="h-14 w-56 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-gray-100" />
+        <div className="h-4 w-40 animate-pulse rounded-lg bg-indigo-100/80" />
+        <div className="h-4 w-32 animate-pulse rounded-lg bg-gray-200/80" />
       </div>
     )
   }
@@ -20,12 +21,5 @@ export default function AuthShell() {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Navbar />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-    </div>
-  )
+  return <DashboardShell />
 }

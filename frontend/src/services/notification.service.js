@@ -16,7 +16,7 @@ export async function getMyNotifications() {
     if (!data.success) throw new Error(data.message)
     return data.data.notifications ?? []
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -27,6 +27,6 @@ export async function getAppointmentNotifications(appointmentId) {
     if (!data.success) throw new Error(data.message)
     return data.data.notifications ?? []
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }

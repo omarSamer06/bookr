@@ -15,7 +15,7 @@ export async function register(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -25,7 +25,7 @@ export async function login(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -35,7 +35,7 @@ export async function getMe() {
     if (!data.success) throw new Error(data.message)
     return data.data.user
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -45,6 +45,6 @@ export async function updatePassword(payload) {
     if (!data.success) throw new Error(data.message)
     return data
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }

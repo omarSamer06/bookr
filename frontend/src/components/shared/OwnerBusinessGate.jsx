@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
 import { businessQueryKeys, getMyBusiness } from '@/services/business.service.js'
 import { useBusinessStore } from '@/store/businessStore'
 
@@ -32,8 +31,9 @@ export default function OwnerBusinessGate() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+      <div className="space-y-6 py-4">
+        <div className="h-10 w-56 animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-64 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-gray-100" />
       </div>
     )
   }

@@ -15,6 +15,22 @@ function formatHours(day) {
   return `${day.open} – ${day.close}`
 }
 
+function DetailSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl animate-pulse space-y-8 px-4 py-10 sm:px-6 lg:px-8" aria-hidden>
+      <div className="h-5 w-32 rounded bg-gray-200" />
+      <div className="h-64 w-full rounded-2xl bg-gray-100" />
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <div className="space-y-4">
+          <div className="h-8 w-64 max-w-full rounded bg-gray-100" />
+          <div className="h-24 rounded-xl bg-gray-50" />
+        </div>
+        <div className="h-48 rounded-2xl bg-gray-50" />
+      </div>
+    </div>
+  )
+}
+
 /** Read-only summary mirrors booking funnel expectations without leaking owner credentials */
 export default function BusinessDetailPage() {
   const { id } = useParams()
@@ -33,25 +49,21 @@ export default function BusinessDetailPage() {
 
   if (!id) {
     return (
-      <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-        Missing business id.
+      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <p className="text-sm text-bookr-muted">Missing business id.</p>
       </div>
     )
   }
 
   if (isLoading) {
-    return (
-      <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-        Loading profile…
-      </div>
-    )
+    return <DetailSkeleton />
   }
 
   if (isError || !business) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center">
-        <p className="text-destructive">{error?.message ?? 'Business not found.'}</p>
-        <Link to="/businesses" className={cn(buttonVariants(), 'mt-4 inline-flex')}>
+      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center sm:px-6">
+        <p className="text-sm font-medium text-red-600">{error?.message ?? 'Business not found.'}</p>
+        <Link to="/businesses" className={cn(buttonVariants(), 'mt-6')}>
           Back to directory
         </Link>
       </div>
@@ -61,149 +73,175 @@ export default function BusinessDetailPage() {
   const activeServices = (business.services ?? []).filter((s) => s.isActive !== false)
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
+    <div className="mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
       <Link
         to="/businesses"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
       >
-        <ArrowLeft className="size-3.5" aria-hidden />
+        <ArrowLeft className="size-4" aria-hidden />
         All businesses
       </Link>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl ring-1 ring-border">
-            {business.images?.[0] ? (
-              <img src={business.images[0]} alt="" className="aspect-video w-full object-cover" />
-            ) : (
-              <div className="flex aspect-video items-center justify-center bg-muted text-muted-foreground">
-                No hero image yet
-              </div>
-            )}
+      <section className="relative overflow-hidden rounded-3xl ring-1 ring-gray-100">
+        <div className="relative aspect-[21/9] min-h-[220px] w-full bg-gray-100 sm:min-h-[280px]">
+          {business.images?.[0] ? (
+            <>
+              <img src={business.images[0]} alt="" className="size-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/85 via-violet-900/55 to-purple-800/35" />
+            </>
+          ) : (
+            <div className="flex size-full items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 text-bookr-muted">
+              No hero image yet
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
+            <Badge className="rounded-full border-0 bg-white/95 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm">
+              {categoryLabel(business.category)}
+            </Badge>
+            <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">{business.name}</h1>
+            {business.owner?.name ? <p className="mt-2 text-sm text-indigo-100">Hosted by {business.owner.name}</p> : null}
           </div>
+        </div>
+      </section>
+
+      <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="space-y-6">
+          <Card className="border-gray-100 shadow-sm">
+            <CardHeader>
+              <CardTitle>About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm leading-relaxed text-bookr-muted">
+              <p>{business.description || 'No description yet.'}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-100 shadow-sm">
+            <CardHeader>
+              <CardTitle>Services</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!activeServices.length ? (
+                <p className="text-sm text-bookr-muted">Services haven’t been published yet.</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {activeServices.map((s) => (
+                    <div
+                      key={s._id}
+                      className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-indigo-50/40 p-4 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
+                    >
+                      <p className="font-heading font-bold text-bookr-text">{s.name}</p>
+                      {s.description ? <p className="mt-2 text-sm text-bookr-muted">{s.description}</p> : null}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-white px-3 py-1 text-xs font-semibold text-indigo-700">
+                          <Clock className="size-3.5" aria-hidden />
+                          {s.duration} min
+                        </span>
+                        <span className="inline-flex rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
+                          ${Number(s.price).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-gray-100 shadow-sm">
+            <CardHeader>
+              <CardTitle>Working hours</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-hidden rounded-xl border border-gray-100">
+              <table className="w-full text-sm">
+                <tbody>
+                  {WEEKDAYS.map(({ key, label }) => (
+                    <tr key={key} className="border-b border-gray-100 last:border-0">
+                      <td className="px-4 py-3 font-medium text-bookr-muted">{label}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-bookr-text">{formatHours(business.workingHours?.[key])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="border-t border-gray-100 bg-gray-50/80 px-4 py-3 text-xs text-bookr-muted">
+                Slots are offered in {business.slotDuration ?? 30}-minute increments when booking opens.
+              </p>
+            </CardContent>
+          </Card>
+
+          {(business.breaks ?? []).length ? (
+            <Card className="border-gray-100 shadow-sm">
+              <CardHeader>
+                <CardTitle>Breaks</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {business.breaks.map((br, i) => (
+                  <p key={`${br.name}-${i}`}>
+                    <span className="font-semibold text-bookr-text">{br.name}</span>
+                    <span className="text-bookr-muted"> · {br.start}–{br.end}</span>
+                  </p>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
+
           {business.images?.length > 1 ? (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {business.images.slice(1).map((url) => (
-                <img key={url} src={url} alt="" className="aspect-video rounded-lg object-cover ring-1 ring-border" />
+                <img key={url} src={url} alt="" className="aspect-video rounded-2xl object-cover ring-1 ring-gray-100" />
               ))}
             </div>
           ) : null}
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <Badge variant="secondary">{categoryLabel(business.category)}</Badge>
-            <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">{business.name}</h1>
-            {business.owner?.name ? (
-              <p className="mt-1 text-sm text-muted-foreground">Hosted by {business.owner.name}</p>
-            ) : null}
-          </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{business.description || 'No description yet.'}</p>
-          <Separator />
-          <ul className="space-y-2 text-sm">
-            <li className="flex gap-2">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span>
-                {[business.location?.address, business.location?.city, business.location?.country]
-                  .filter(Boolean)
-                  .join(', ') || 'Location coming soon'}
-              </span>
-            </li>
-            {business.phone ? (
-              <li className="flex gap-2">
-                <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <a href={`tel:${business.phone}`} className="text-primary underline-offset-4 hover:underline">
-                  {business.phone}
-                </a>
-              </li>
-            ) : null}
-            {business.website ? (
-              <li className="flex gap-2">
-                <Globe className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <a
-                  href={business.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="break-all text-primary underline-offset-4 hover:underline"
-                >
-                  {business.website}
-                </a>
-              </li>
-            ) : null}
-          </ul>
-          <Link
-            to={`/book/${business._id}`}
-            className={cn(buttonVariants(), 'inline-flex w-full justify-center')}
-          >
-            Book now
-          </Link>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Services</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {!activeServices.length ? (
-            <p className="text-sm text-muted-foreground">Services haven’t been published yet.</p>
-          ) : (
-            activeServices.map((s) => (
-              <div
-                key={s._id}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/70 px-3 py-2"
-              >
-                <div>
-                  <p className="font-medium">{s.name}</p>
-                  {s.description ? (
-                    <p className="text-sm text-muted-foreground">{s.description}</p>
-                  ) : null}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="size-3.5" aria-hidden />
-                    {s.duration} min
-                  </span>
-                  <span className="font-medium text-foreground">${Number(s.price).toFixed(2)}</span>
-                </div>
+        <aside className="space-y-6 lg:sticky lg:top-24">
+          <Card className="border-gray-100 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-base">Visit & contact</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex gap-3">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
+                <span className="text-bookr-muted">
+                  {[business.location?.address, business.location?.city, business.location?.country]
+                    .filter(Boolean)
+                    .join(', ') || 'Location coming soon'}
+                </span>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Hours</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          {WEEKDAYS.map(({ key, label }) => (
-            <div key={key} className="flex justify-between gap-4 text-sm">
-              <span className="text-muted-foreground">{label}</span>
-              <span>{formatHours(business.workingHours?.[key])}</span>
-            </div>
-          ))}
-          <p className="sm:col-span-2 text-xs text-muted-foreground">
-            Slots are offered in {business.slotDuration ?? 30}-minute increments when booking opens.
-          </p>
-        </CardContent>
-      </Card>
-
-      {(business.breaks ?? []).length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Breaks</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {business.breaks.map((br, i) => (
-              <p key={`${br.name}-${i}`}>
-                <span className="font-medium">{br.name}</span>
-                <span className="text-muted-foreground"> · {br.start}–{br.end}</span>
-              </p>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
+              {business.phone ? (
+                <div className="flex gap-3">
+                  <Phone className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
+                  <a href={`tel:${business.phone}`} className="font-medium text-indigo-600 underline-offset-4 hover:underline">
+                    {business.phone}
+                  </a>
+                </div>
+              ) : null}
+              {business.website ? (
+                <div className="flex gap-3">
+                  <Globe className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
+                  <a
+                    href={business.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all font-medium text-indigo-600 underline-offset-4 hover:underline"
+                  >
+                    {business.website}
+                  </a>
+                </div>
+              ) : null}
+              <Separator />
+              <Link
+                to={`/book/${business._id}`}
+                className={cn(
+                  buttonVariants({ size: 'lg' }),
+                  'w-full justify-center bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-sm hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-700'
+                )}
+              >
+                Book now
+              </Link>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </div>
   )
 }

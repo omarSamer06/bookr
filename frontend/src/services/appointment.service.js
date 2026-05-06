@@ -20,7 +20,7 @@ export async function getAvailableSlots(businessId, date, serviceId) {
     if (!data.success) throw new Error(data.message)
     return data.data.slots ?? []
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -31,7 +31,7 @@ export async function createAppointment(payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -45,7 +45,7 @@ export async function getMyAppointments(filters = {}) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointments ?? []
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -60,7 +60,7 @@ export async function getBusinessAppointments(filters = {}) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointments ?? []
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -71,7 +71,7 @@ export async function getAppointmentById(id) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -82,7 +82,7 @@ export async function updateAppointmentStatus(id, status) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -93,7 +93,7 @@ export async function cancelAppointment(id) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
 
@@ -104,6 +104,6 @@ export async function rescheduleAppointment(id, payload) {
     if (!data.success) throw new Error(data.message)
     return data.data.appointment
   } catch (err) {
-    throw new Error(pickMessage(err))
+    throw new Error(pickMessage(err), { cause: err })
   }
 }
