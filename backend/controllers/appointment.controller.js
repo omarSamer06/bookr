@@ -531,6 +531,9 @@ export const updateAppointmentStatus = async (req, res) => {
     }
 
     appointment.status = status;
+    if (status === 'completed') {
+      appointment.completedAt = new Date();
+    }
     await appointment.save();
 
     const populated = await Appointment.findById(appointment._id)

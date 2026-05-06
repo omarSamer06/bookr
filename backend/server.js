@@ -15,6 +15,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import chatbotRoutes from './routes/chatbot.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
 import { registerReminderCron } from './jobs/reminder.job.js';
+import { registerFollowUpCron } from './jobs/followup.job.js';
 
 configurePassport();
 
@@ -60,6 +61,7 @@ const start = async () => {
   try {
     await connectDB();
     registerReminderCron();
+    registerFollowUpCron();
     app.listen(PORT, () => {
       console.log(`Bookr API listening on port ${PORT}`);
     });

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const notificationTypes = ['confirmation', 'reminder', 'cancellation', 'reschedule', 'custom'];
+const notificationTypes = ['confirmation', 'reminder', 'cancellation', 'reschedule', 'followup', 'custom'];
 const notificationChannels = ['email', 'sms'];
 const notificationStatuses = ['sent', 'failed'];
 

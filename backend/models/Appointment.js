@@ -70,6 +70,15 @@ const appointmentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    followUpSent: {
+      type: Boolean,
+      default: false,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     cancelledAt: {
       type: Date,
       default: null,

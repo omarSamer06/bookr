@@ -11,6 +11,11 @@ import {
   sendEmail,
 } from './email.service.js';
 import {
+  generateCancellationMessage,
+  generateConfirmationMessage,
+  generateReminderMessage,
+} from './personalized.message.service.js';
+import {
   cancellationSMS,
   confirmationSMS,
   reminderSMS,
@@ -35,7 +40,7 @@ async function loadAppointmentForNotify(appointmentOrId) {
   if (!mongoose.Types.ObjectId.isValid(String(id))) return null;
   return Appointment.findById(id)
     .populate({ path: 'client', select: 'name email phone' })
-    .populate({ path: 'business', select: 'name location phone website' });
+    .populate({ path: 'business', select: 'name location phone website category' });
 }
 
 function buildContext(appt) {
@@ -48,7 +53,8 @@ function buildContext(appt) {
   const price = appt.service?.price;
   const loc = appt.business?.location || {};
   const address = [loc.address, loc.city, loc.country].filter(Boolean).join(', ');
-  return { clientName, businessName, serviceName, dateStr, startTime, price, address };
+  const category = appt.business?.category || '';
+  return { clientName, businessName, serviceName, dateStr, startTime, price, address, category };
 }
 
 /** Prefers email with SMS additive so Twilio gaps don’t block every client */
@@ -185,6 +191,64 @@ export async function sendNotification({ userId, appointmentId, type, channels }
         const mail = buildEmailPayload(type, ctx);
         if (!mail) continue;
         try {
+          if (type === 'confirmation') {
+            const aiText = await generateConfirmationMessage({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+              startTime: ctx.startTime,
+              price: ctx.price,
+            });
+            mail.html = confirmationTemplate({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+              startTime: ctx.startTime,
+              price: ctx.price,
+            }).replace(
+              /Your appointment with <strong>.*?<\/strong> is confirmed\./,
+              aiText
+            );
+          }
+
+          if (type === 'cancellation') {
+            const aiText = await generateCancellationMessage({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+            });
+            mail.html = cancellationTemplate({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+              startTime: ctx.startTime,
+            }).replace(/has been <strong style="color:#ffb4b4;">cancelled<\/strong>\./, aiText);
+          }
+
+          if (type === 'reminder') {
+            const aiText = await generateReminderMessage({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+              startTime: ctx.startTime,
+              address: ctx.address,
+              category: ctx.category,
+            });
+            mail.html = reminderTemplate({
+              clientName: ctx.clientName,
+              businessName: ctx.businessName,
+              serviceName: ctx.serviceName,
+              date: ctx.dateStr,
+              startTime: ctx.startTime,
+              address: ctx.address,
+            }).replace(/Friendly reminder — you’re booked with <strong>.*?<\/strong> soon\./, aiText);
+          }
+
           await sendEmail({ to: user.email, subject: mail.subject, html: mail.html });
           await persistNotification({
             userId,
