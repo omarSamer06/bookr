@@ -27,9 +27,19 @@ function PaymentStatusBadge({ paymentStatus }) {
     unpaid: 'bg-red-100 text-red-700 border-0',
     paid: 'bg-emerald-100 text-emerald-700 border-0',
     refunded: 'bg-gray-100 text-gray-600 border-0',
+    on_arrival: 'bg-blue-100 text-blue-700 border-0',
   }
 
-  const label = ps === 'unpaid' ? 'Unpaid' : ps === 'paid' ? 'Paid' : ps === 'refunded' ? 'Refunded' : ps
+  const label =
+    ps === 'unpaid'
+      ? 'Unpaid'
+      : ps === 'paid'
+        ? 'Paid'
+        : ps === 'refunded'
+          ? 'Refunded'
+          : ps === 'on_arrival'
+            ? 'Pay On Arrival'
+            : ps
 
   return (
     <Badge variant="outline" className={cn('rounded-full px-3 py-1 text-xs font-semibold capitalize', styles[ps] ?? styles.unpaid)}>
@@ -75,6 +85,7 @@ export default function AppointmentCard({
   onComplete,
   onNoShow,
   onRefund,
+  onMarkPaid,
   notificationsHref,
 }) {
   const future = isAppointmentFuture(appointment)
@@ -128,6 +139,11 @@ export default function AppointmentCard({
     appointment.paymentStatus === 'paid' &&
     status === 'cancelled'
 
+  const showOwnerMarkPaid =
+    viewType === 'owner' &&
+    Boolean(onMarkPaid) &&
+    appointment.paymentStatus === 'on_arrival'
+
   const ownerInitial = (appointment.client?.name?.trim?.()?.[0] ?? appointment.client?.email?.[0] ?? '?').toUpperCase()
 
   return (
@@ -142,7 +158,7 @@ export default function AppointmentCard({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 gap-3">
             {viewType === 'owner' ? (
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-sm font-bold text-indigo-800">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-100 to-purple-100 text-sm font-bold text-indigo-800">
                 {ownerInitial}
               </span>
             ) : null}
@@ -205,6 +221,11 @@ export default function AppointmentCard({
           {showOwnerRefund ? (
             <Button type="button" variant="outline" size="sm" onClick={() => onRefund(appointment)}>
               Refund
+            </Button>
+          ) : null}
+          {showOwnerMarkPaid ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => onMarkPaid(appointment)}>
+              Mark as paid
             </Button>
           ) : null}
         </div>

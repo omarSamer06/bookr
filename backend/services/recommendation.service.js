@@ -295,7 +295,8 @@ export async function getRecommendedSlots(businessId, clientId, serviceId, dateI
     getStartTimeCounts(business._id),
   ]);
 
-  const slotStep = Number(business.slotDuration) || 30;
+  // Recommendations use the same per-service cadence as slot generation.
+  const slotStep = Number(service.duration) || 30;
 
   const scored = availableSlots.map((slot) => {
     const existingCount = countsMap.get(slot) ?? 0;

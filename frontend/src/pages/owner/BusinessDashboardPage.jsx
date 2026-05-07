@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Building2, CalendarDays, Coffee, Image as ImageIcon, Plus, Sparkles } from 'lucide-react'
+import { Building2, CalendarDays, Coffee, Image as ImageIcon, Plus, Sparkles, Trash2 } from 'lucide-react'
 import BusinessInfoForm from '@/components/business/BusinessInfoForm'
 import ImageUploader from '@/components/business/ImageUploader'
 import ServiceCard from '@/components/business/ServiceCard'
@@ -25,11 +25,13 @@ import { cn } from '@/lib/utils'
 import {
   addService,
   businessQueryKeys,
+  deleteBusiness,
   deleteService,
   getMyBusiness,
   updateBusiness,
   updateService,
 } from '@/services/business.service.js'
+import { useBusinessStore } from '@/store/businessStore'
 
 function invalidateBusinessQueries(qc, businessId) {
   qc.invalidateQueries({ queryKey: businessQueryKeys.mine })
@@ -42,6 +44,8 @@ function invalidateBusinessQueries(qc, businessId) {
 /** Owner cockpit grouped by concern so mutations stay localized per workflow */
 export default function BusinessDashboardPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const clearBusiness = useBusinessStore((s) => s.clearBusiness)
   const { data: business, isLoading } = useQuery({
     queryKey: businessQueryKeys.mine,
     queryFn: getMyBusiness,
@@ -52,8 +56,10 @@ export default function BusinessDashboardPage() {
   const [svcOpen, setSvcOpen] = useState(false)
   const [svcMode, setSvcMode] = useState('add')
   const [svcEditing, setSvcEditing] = useState(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const [breakRows, setBreakRows] = useState([])
+  const [paymentMode, setPaymentMode] = useState('both')
 
   const breaksSig =
     business?._id != null ? `${business._id}:${JSON.stringify(business.breaks ?? [])}` : ''
@@ -63,6 +69,13 @@ export default function BusinessDashboardPage() {
     const raw = business.breaks
     if (!raw?.length) setBreakRows([])
     else setBreakRows(raw.map((b) => ({ ...b })))
+  }
+
+  const paymentSig = business?._id ? `${business._id}:${business.paymentMode ?? 'both'}` : ''
+  const [prevPaymentSig, setPrevPaymentSig] = useState('')
+  if (business && paymentSig !== prevPaymentSig) {
+    setPrevPaymentSig(paymentSig)
+    setPaymentMode(business.paymentMode ?? 'both')
   }
 
   const updateMutation = useMutation({
@@ -100,6 +113,22 @@ export default function BusinessDashboardPage() {
       invalidateBusinessQueries(qc, business?._id)
     },
     onError: (err) => toast.error(err.message),
+  })
+
+  const deleteBizMutation = useMutation({
+    mutationFn: deleteBusiness,
+    onSuccess: async () => {
+      setDeleteOpen(false)
+      clearBusiness()
+      toast.success('Business deleted successfully')
+      await qc.invalidateQueries({ queryKey: businessQueryKeys.mine })
+      await qc.invalidateQueries({ queryKey: ['businesses', 'list'] })
+      navigate('/dashboard/business/setup', { replace: true })
+    },
+    onError: (err) => {
+      toast.error(err.message)
+      setDeleteOpen(false)
+    },
   })
 
   const handleInfoSubmit = (payload) => {
@@ -231,7 +260,7 @@ export default function BusinessDashboardPage() {
               'relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md'
             )}
           >
-            <div className={cn('pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100', s.accent)} />
+            <div className={cn('pointer-events-none absolute inset-0 bg-linear-to-br opacity-100', s.accent)} />
             <div className="relative flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold tracking-wide text-bookr-muted uppercase">{s.label}</p>
@@ -267,20 +296,68 @@ export default function BusinessDashboardPage() {
                 <p>
                   <span className="font-semibold text-bookr-text">Phone:</span> {business.phone || '—'}
                 </p>
-                <p>
-                  <span className="font-semibold text-bookr-text">Website:</span>{' '}
-                  {business.website ? (
-                    <a href={business.website} className="text-indigo-600 underline-offset-4 hover:underline" target="_blank" rel="noreferrer">
-                      {business.website}
-                    </a>
-                  ) : (
-                    '—'
-                  )}
-                </p>
               </div>
               <Button type="button" variant="secondary" onClick={() => setInfoOpen(true)}>
                 Edit profile
               </Button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-bookr-text">Payment settings</p>
+                <p className="text-sm text-bookr-muted">How do you accept payments?</p>
+              </div>
+              <Button
+                type="button"
+                disabled={updateMutation.isPending || paymentMode === (business.paymentMode ?? 'both')}
+                onClick={() =>
+                  updateMutation.mutate(
+                    { paymentMode },
+                    {
+                      onSuccess: () => toast.success('Payment settings saved'),
+                    }
+                  )
+                }
+              >
+                Save
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  key: 'online',
+                  title: 'Online payment',
+                  desc: 'Clients pay securely online before their appointment is confirmed.',
+                },
+                {
+                  key: 'on_arrival',
+                  title: 'Pay on arrival',
+                  desc: 'Clients pay when they arrive at your business.',
+                },
+                {
+                  key: 'both',
+                  title: 'Both',
+                  desc: 'Let clients choose how they want to pay.',
+                },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setPaymentMode(opt.key)}
+                  className={cn(
+                    'rounded-2xl border p-4 text-left transition-all duration-200',
+                    paymentMode === opt.key
+                      ? 'border-indigo-500 bg-indigo-50 shadow-sm ring-1 ring-indigo-200'
+                      : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50'
+                  )}
+                >
+                  <p className="font-heading font-bold text-bookr-text">{opt.title}</p>
+                  <p className="mt-2 text-sm text-bookr-muted">{opt.desc}</p>
+                </button>
+              ))}
             </div>
           </div>
         </TabsContent>
@@ -421,6 +498,51 @@ export default function BusinessDashboardPage() {
             isPending={updateMutation.isPending}
             onSubmit={handleInfoSubmit}
           />
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-bookr-text">Danger zone</p>
+            <p className="text-sm text-bookr-muted">
+              Deleting your business permanently removes appointments, notifications, and uploaded images.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="mr-2 size-4" aria-hidden />
+            Delete business
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delete business</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete your business? This will permanently delete all appointments,
+              notifications, and data associated with your business. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteBizMutation.isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={() => deleteBizMutation.mutate()}
+              disabled={deleteBizMutation.isPending}
+            >
+              {deleteBizMutation.isPending ? 'Deleting…' : 'Delete Business'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

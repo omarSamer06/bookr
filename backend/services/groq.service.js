@@ -21,7 +21,7 @@ export async function sendMessage({ messages, systemPrompt }) {
     payload.push(...(messages || []));
 
     const completion = await client.chat.completions.create({
-      model: 'llama3-8b-8192',
+      model: 'llama-3.3-70b-versatile',
       messages: payload,
       max_tokens: 1024,
       temperature: 0.7,

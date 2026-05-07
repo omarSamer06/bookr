@@ -9,6 +9,7 @@ import PaymentForm from '@/components/booking/PaymentForm'
 import SlotPicker from '@/components/booking/SlotPicker'
 import RecommendationBanner from '@/components/booking/RecommendationBanner'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,9 +37,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedSlot, setSelectedSlot] = useState('')
   const [notes, setNotes] = useState('')
-
-  const isPaidService = Number(selectedService?.price) > 0
-  const resolvedStep = !isPaidService && step === 5 ? 4 : step
+  const [paymentMethod, setPaymentMethod] = useState('online')
 
   const stepLabels = useMemo(() => {
     const row = [
@@ -47,9 +46,9 @@ export default function BookingPage() {
       { k: 3, label: 'Time' },
       { k: 4, label: 'Review' },
     ]
-    if (isPaidService) row.push({ k: 5, label: 'Payment' })
+    // Step labels are computed later once business + service are loaded
     return row
-  }, [isPaidService])
+  }, [])
 
   const {
     data: business,
@@ -63,6 +62,28 @@ export default function BookingPage() {
     retry: false,
   })
 
+  const isPaidService = Number(selectedService?.price) > 0
+  const paymentMode = business?.paymentMode ?? 'both'
+  const mustPayOnline = paymentMode === 'online'
+  const canPayOnArrival = paymentMode === 'on_arrival'
+  const canChoosePayment = paymentMode === 'both' && isPaidService
+  const payingOnArrival = canPayOnArrival || (canChoosePayment && paymentMethod === 'on_arrival')
+
+  const resolvedStep = !isPaidService && step === 5 ? 4 : step
+
+  const computedStepLabels = useMemo(() => {
+    const row = [
+      { k: 1, label: 'Service' },
+      { k: 2, label: 'Date' },
+      { k: 3, label: 'Time' },
+      { k: 4, label: 'Review' },
+    ]
+    if (isPaidService && (mustPayOnline || (canChoosePayment && paymentMethod === 'online'))) {
+      row.push({ k: 5, label: 'Payment' })
+    }
+    return row
+  }, [isPaidService, mustPayOnline, canChoosePayment, paymentMethod])
+
   const activeServices = useMemo(
     () => (business?.services ?? []).filter((s) => s.isActive !== false),
     [business?.services]
@@ -72,7 +93,9 @@ export default function BookingPage() {
 
   const handleSelectService = (s) => {
     setSelectedService(s)
+    setSelectedDate(null)
     setSelectedSlot('')
+    setPaymentMethod('online')
   }
 
   const handleDateChange = (d) => {
@@ -87,7 +110,17 @@ export default function BookingPage() {
     error: slotsErr,
   } = useQuery({
     queryKey: appointmentQueryKeys.slots(businessId, selectedDate, selectedService?._id),
-    queryFn: () => getAvailableSlots(businessId, selectedDate, selectedService._id),
+    queryFn: () => {
+      if (import.meta.env.DEV) {
+        // Helps catch timezone/date formatting issues when debugging "no slots" reports.
+        console.log('[booking] fetching slots', {
+          businessId,
+          serviceId: selectedService?._id,
+          date: selectedDate,
+        })
+      }
+      return getAvailableSlots(businessId, selectedDate, selectedService._id)
+    },
     enabled: Boolean(businessId && selectedDate && selectedService?._id && resolvedStep >= 3),
     staleTime: 30 * 1000,
   })
@@ -120,7 +153,14 @@ export default function BookingPage() {
   } = useQuery({
     queryKey: ['payments', 'intent', businessId, selectedService?._id],
     queryFn: () => createPaymentIntent({ businessId, serviceId: selectedService._id }),
-    enabled: Boolean(step === 5 && isPaidService && businessId && selectedService?._id),
+    enabled: Boolean(
+      step === 5 &&
+        isPaidService &&
+        businessId &&
+        selectedService?._id &&
+        (mustPayOnline || (canChoosePayment && paymentMethod === 'online')) &&
+        !payingOnArrival
+    ),
     retry: false,
     staleTime: 60 * 1000,
   })
@@ -138,6 +178,7 @@ export default function BookingPage() {
         date: selectedDate,
         startTime: selectedSlot,
         notes,
+        ...(paymentMode === 'both' ? { paymentMethod } : {}),
         ...(pid ? { paymentIntentId: pid } : {}),
       }),
     onSuccess: async () => {
@@ -238,12 +279,16 @@ export default function BookingPage() {
       <div>
         <h1 className="font-heading text-3xl font-bold tracking-tight text-bookr-text sm:text-4xl">Book {business.name}</h1>
         <p className="mt-3 text-sm leading-relaxed text-bookr-muted sm:text-base">
-          Paid visits authorize through Stripe — free visits skip checkout entirely.
+          {paymentMode === 'on_arrival'
+            ? 'Pay at the business — no online checkout required.'
+            : paymentMode === 'both'
+              ? 'Choose to pay online now or on arrival at checkout.'
+              : 'Paid visits authorize through Stripe — free visits skip checkout entirely.'}
         </p>
       </div>
 
       <ol className="flex flex-wrap gap-2 sm:gap-3">
-        {stepLabels.map(({ k, label }) => (
+        {computedStepLabels.map(({ k, label }) => (
           <li
             key={k}
             className={cn(
@@ -283,7 +328,9 @@ export default function BookingPage() {
             {resolvedStep === 3 ? 'Only openings returned by Bookr right now can be claimed.' : null}
             {resolvedStep === 4
               ? isPaidService
-                ? 'Confirm details — Stripe collects the card on the next step.'
+                ? payingOnArrival
+                  ? 'Confirm details — payment will be collected at the business.'
+                  : 'Confirm details — Stripe collects the card on the next step.'
                 : 'No card required for complimentary services.'
               : null}
             {resolvedStep === 5
@@ -377,7 +424,59 @@ export default function BookingPage() {
                 dateStr={selectedDate}
                 timeStr={selectedSlot}
                 priceAmount={selectedService?.price}
+                paymentMethod={
+                  isPaidService
+                    ? payingOnArrival
+                      ? 'on_arrival'
+                      : 'online'
+                    : 'online'
+                }
               />
+
+              {canChoosePayment ? (
+                <div className="space-y-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-bookr-text">Payment method</p>
+                    {paymentMethod === 'on_arrival' ? (
+                      <Badge className="rounded-full bg-blue-100 text-blue-700 border-0">Pay on arrival</Badge>
+                    ) : (
+                      <Badge className="rounded-full bg-emerald-100 text-emerald-700 border-0">Pay now</Badge>
+                    )}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('online')}
+                      className={cn(
+                        'rounded-2xl border p-4 text-left transition-all duration-200',
+                        paymentMethod === 'online'
+                          ? 'border-indigo-500 bg-linear-to-br from-indigo-50 to-purple-50 shadow-sm ring-1 ring-indigo-200'
+                          : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50'
+                      )}
+                    >
+                      <p className="font-heading font-bold text-bookr-text">Pay now</p>
+                      <p className="mt-2 text-sm text-bookr-muted">Secure online payment via Stripe.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('on_arrival')}
+                      className={cn(
+                        'rounded-2xl border p-4 text-left transition-all duration-200',
+                        paymentMethod === 'on_arrival'
+                          ? 'border-indigo-500 bg-indigo-50 shadow-sm ring-1 ring-indigo-200'
+                          : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50'
+                      )}
+                    >
+                      <p className="font-heading font-bold text-bookr-text">Pay on arrival</p>
+                      <p className="mt-2 text-sm text-bookr-muted">Payment will be collected at the business.</p>
+                    </button>
+                  </div>
+                </div>
+              ) : payingOnArrival && isPaidService ? (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/40 px-4 py-3 text-sm text-blue-800">
+                  Payment will be collected at the business.
+                </div>
+              ) : null}
 
               <div className="grid gap-2">
                 <Label htmlFor="bk-notes">Notes (optional)</Label>
@@ -457,7 +556,17 @@ export default function BookingPage() {
               ) : (
                 <Button
                   type="button"
-                  onClick={() => (isPaidService ? setStep(5) : bookMutation.mutate({}))}
+                  onClick={() => {
+                    if (!isPaidService) {
+                      bookMutation.mutate({})
+                      return
+                    }
+                    if (payingOnArrival) {
+                      bookMutation.mutate({})
+                      return
+                    }
+                    setStep(5)
+                  }}
                   disabled={bookMutation.isPending}
                 >
                   {bookMutation.isPending ? (
@@ -465,8 +574,8 @@ export default function BookingPage() {
                       <Loader2 className="size-4 animate-spin" aria-hidden />
                       Booking…
                     </>
-                  ) : isPaidService ? (
-                    'Continue to payment'
+                  ) : isPaidService && !payingOnArrival ? (
+                    'Proceed to payment'
                   ) : (
                     'Confirm booking'
                   )}

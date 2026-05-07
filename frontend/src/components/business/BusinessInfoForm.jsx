@@ -23,7 +23,6 @@ export default function BusinessInfoForm({
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
   const [phone, setPhone] = useState('')
-  const [website, setWebsite] = useState('')
 
   const [prevInitial, setPrevInitial] = useState()
   if (initialValues && initialValues !== prevInitial) {
@@ -36,7 +35,6 @@ export default function BusinessInfoForm({
     setCity(loc.city ?? '')
     setCountry(loc.country ?? '')
     setPhone(initialValues.phone ?? '')
-    setWebsite(initialValues.website ?? '')
   }
 
   const handleSubmit = (e) => {
@@ -52,7 +50,6 @@ export default function BusinessInfoForm({
         country: country.trim(),
       },
       phone: phone.trim(),
-      website: website.trim(),
     })
   }
 
@@ -117,10 +114,6 @@ export default function BusinessInfoForm({
         <div className="grid gap-2">
           <Label htmlFor="biz-phone">Phone</Label>
           <Input id="biz-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="biz-web">Website</Label>
-          <Input id="biz-web" type="url" value={website} onChange={(e) => setWebsite(e.target.value)} />
         </div>
       </div>
 

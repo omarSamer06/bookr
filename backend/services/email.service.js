@@ -17,12 +17,24 @@ export async function sendEmail({ to, subject, html }) {
     throw new Error('FROM_EMAIL is not configured');
   }
 
-  await sgMail.send({
-    to,
-    from,
-    subject,
-    html,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[email] sending', { to, subject });
+  }
+
+  try {
+    await sgMail.send({
+      to,
+      from,
+      subject,
+      html,
+    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[email] sent', { to });
+    }
+  } catch (error) {
+    console.error('[email] SendGrid error:', error?.response?.body || error?.message || error);
+    throw error;
+  }
 }
 
 /** Shared Bookr chrome keeps multi-template mailings visually consistent */

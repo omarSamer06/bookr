@@ -30,7 +30,7 @@ import {
   getBusinessAppointments,
   updateAppointmentStatus,
 } from '@/services/appointment.service.js'
-import { refundPayment } from '@/services/payment.service.js'
+import { markAsPaid, refundPayment } from '@/services/payment.service.js'
 
 function OwnerAppointmentsSkeleton() {
   return (
@@ -88,6 +88,15 @@ export default function OwnerAppointmentsPage() {
       toast.success('Refund issued')
       await qc.invalidateQueries({ queryKey: ['appointments', 'business'] })
       setRefundTarget(null)
+    },
+    onError: (err) => toast.error(err.message),
+  })
+
+  const markPaidMut = useMutation({
+    mutationFn: (id) => markAsPaid(id),
+    onSuccess: async () => {
+      toast.success('Marked as paid')
+      await qc.invalidateQueries({ queryKey: ['appointments', 'business'] })
     },
     onError: (err) => toast.error(err.message),
   })
@@ -175,6 +184,11 @@ export default function OwnerAppointmentsPage() {
               onNoShow={() => patchStatus.mutate({ id: appt._id, next: 'no-show' })}
               onCancel={() => cancelMut.mutate(appt._id)}
               onRefund={(row) => setRefundTarget(row)}
+              onMarkPaid={
+                appt.paymentStatus === 'on_arrival'
+                  ? () => markPaidMut.mutate(appt._id)
+                  : undefined
+              }
             />
           ))}
         </div>

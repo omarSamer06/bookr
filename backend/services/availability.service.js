@@ -2,6 +2,7 @@ import Business from '../models/Business.js';
 import Appointment from '../models/Appointment.js';
 
 const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const MINUTES_IN_DAY = 24 * 60;
 
 /** Parses "HH:mm" into minutes-from-midnight for stable numeric comparisons */
 function timeToMinutes(timeStr) {
@@ -13,10 +14,11 @@ function timeToMinutes(timeStr) {
   return h * 60 + min;
 }
 
-/** Converts minutes-from-midnight to canonical "HH:mm" */
-function minutesToLabel(totalMinutes) {
-  const h = Math.floor(totalMinutes / 60);
-  const min = totalMinutes % 60;
+/** Converts minutes to canonical "HH:mm", wrapping past 24:00 (overnight support) */
+function minutesToTime(totalMinutes) {
+  const wrapped = ((Number(totalMinutes) % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  const h = Math.floor(wrapped / 60);
+  const min = wrapped % 60;
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
@@ -24,7 +26,7 @@ function minutesToLabel(totalMinutes) {
 function addMinutesToClock(startStr, deltaMinutes) {
   const start = timeToMinutes(startStr);
   if (start === null || !Number.isFinite(deltaMinutes)) return null;
-  return minutesToLabel(start + deltaMinutes);
+  return minutesToTime(start + deltaMinutes);
 }
 
 /** Half-open interval overlap keeps touching endpoints non-blocking (back-to-back bookings allowed) */
@@ -45,6 +47,36 @@ function utcWeekdayKey(dateUtcMidnight) {
   return WEEKDAY_KEYS[dow];
 }
 
+function debugLog(...args) {
+  if (process.env.NODE_ENV === 'production' && process.env.DEBUG_AVAILABILITY !== '1') return;
+  console.log('[availability]', ...args);
+}
+
+function isOvernightSchedule(openMinutes, closeMinutes) {
+  return Number.isFinite(openMinutes) && Number.isFinite(closeMinutes) && closeMinutes < openMinutes;
+}
+
+function normalizeWorkingHoursDay(workingHours, dayKey) {
+  if (!workingHours || typeof workingHours !== 'object') return null;
+  if (workingHours[dayKey]) return workingHours[dayKey];
+  const foundKey = Object.keys(workingHours).find((k) => String(k).toLowerCase() === String(dayKey).toLowerCase());
+  return foundKey ? workingHours[foundKey] : null;
+}
+
+function isDayOff(day) {
+  if (!day) return true;
+  if (day.isOff === true) return true;
+  if (typeof day.isOff === 'string') return day.isOff.trim().toLowerCase() === 'true';
+  return Boolean(day.isOff);
+}
+
+function normalizeTimeIntoWindow(minutes, openMinutes, overnight) {
+  if (minutes == null) return null;
+  if (!overnight) return minutes;
+  // When open->close spans midnight, times after midnight belong to the "next-day" portion of the same window.
+  return minutes < openMinutes ? minutes + MINUTES_IN_DAY : minutes;
+}
+
 /** Loads blocking appointments so concurrent pending/confirmed ranges exclude generated slots */
 async function loadBlockingAppointments(businessId, dateUtcMidnight) {
   return Appointment.find({
@@ -57,11 +89,16 @@ async function loadBlockingAppointments(businessId, dateUtcMidnight) {
 }
 
 /** Returns numeric intervals [start,end) for booked ranges */
-function appointmentIntervalsMinutes(appointments) {
+function appointmentIntervalsMinutes(appointments, openMinutes, overnight) {
   const intervals = [];
   for (const appt of appointments) {
-    const s = timeToMinutes(appt.startTime);
-    const e = timeToMinutes(appt.endTime);
+    let s = timeToMinutes(appt.startTime);
+    let e = timeToMinutes(appt.endTime);
+    s = normalizeTimeIntoWindow(s, openMinutes, overnight);
+    e = normalizeTimeIntoWindow(e, openMinutes, overnight);
+    if (s === null || e === null) continue;
+    // End before start indicates the appointment itself spans midnight.
+    if (e <= s) e += MINUTES_IN_DAY;
     if (s === null || e === null || e <= s) continue;
     intervals.push([s, e]);
   }
@@ -69,11 +106,14 @@ function appointmentIntervalsMinutes(appointments) {
 }
 
 /** Checks booking interval against global business breaks */
-function overlapsAnyBreak(bookingStartM, bookingEndM, breaks) {
+function overlapsAnyBreak(bookingStartM, bookingEndM, breaks, openMinutes, overnight) {
   for (const br of breaks || []) {
-    const bs = timeToMinutes(br.start);
-    const be = timeToMinutes(br.end);
+    let bs = timeToMinutes(br.start);
+    let be = timeToMinutes(br.end);
+    bs = normalizeTimeIntoWindow(bs, openMinutes, overnight);
+    be = normalizeTimeIntoWindow(be, openMinutes, overnight);
     if (bs === null || be === null || be <= bs) continue;
+    if (be <= bs) be += MINUTES_IN_DAY;
     if (intervalsOverlapHalfOpen(bookingStartM, bookingEndM, bs, be)) return true;
   }
   return false;
@@ -103,18 +143,46 @@ export async function getAvailableSlots(businessId, dateInput, serviceDurationMi
   if (!dateUtcMidnight) return [];
 
   const dayKey = utcWeekdayKey(dateUtcMidnight);
-  const day = business.workingHours?.[dayKey];
-  if (!day || day.isOff) return [];
+  const day = normalizeWorkingHoursDay(business.workingHours, dayKey);
+
+  debugLog('request', {
+    businessId: String(businessId),
+    dateInput: String(dateInput),
+    dateUtcMidnight: dateUtcMidnight.toISOString(),
+    dayKey,
+    workingHoursKeys: Object.keys(business.workingHours || {}),
+    day,
+    slotDuration: business.slotDuration,
+    breaks: (business.breaks || []).length,
+  });
+
+  if (!day || isDayOff(day)) {
+    debugLog('closed/day-off', { dayKey, isOff: day?.isOff });
+    return [];
+  }
 
   const openM = timeToMinutes(day.open);
-  const closeM = timeToMinutes(day.close);
-  if (openM === null || closeM === null || closeM <= openM) return [];
+  const closeRawM = timeToMinutes(day.close);
+  if (openM === null || closeRawM === null) {
+    debugLog('invalid-hours', { dayKey, open: day.open, close: day.close, openM, closeM: closeRawM });
+    return [];
+  }
 
-  const step = Number(business.slotDuration);
-  const slotStep = Number.isFinite(step) && step >= 5 ? step : 30;
+  const overnight = isOvernightSchedule(openM, closeRawM);
+  const closeM = overnight ? closeRawM + MINUTES_IN_DAY : closeRawM;
+
+  // Overnight logic: if a business closes after midnight (e.g. 09:00–01:00),
+  // we extend the close boundary into the next day so the loop can generate slots past 24:00.
+  if (closeM <= openM) {
+    debugLog('invalid-hours', { dayKey, open: day.open, close: day.close, openM, closeM, overnight });
+    return [];
+  }
+
+  // Slot starts are generated per-service so longer services don't appear bookable every 30 minutes.
+  const slotStep = duration;
 
   const blocking = await loadBlockingAppointments(business._id, dateUtcMidnight);
-  const bookedIntervals = appointmentIntervalsMinutes(blocking);
+  const bookedIntervals = appointmentIntervalsMinutes(blocking, openM, overnight);
 
   const slots = [];
 
@@ -123,11 +191,26 @@ export async function getAvailableSlots(businessId, dateInput, serviceDurationMi
     const endM = startM + duration;
     if (endM > closeM) break;
 
-    if (overlapsAnyBreak(startM, endM, business.breaks)) continue;
+    if (overlapsAnyBreak(startM, endM, business.breaks, openM, overnight)) continue;
     if (overlapsAnyAppointment(startM, endM, bookedIntervals)) continue;
 
-    slots.push(minutesToLabel(startM));
+    slots.push(minutesToTime(startM));
   }
+
+  debugLog('result', {
+    dayKey,
+    isOff: day.isOff,
+    open: day.open,
+    close: day.close,
+    openM,
+    closeM,
+    overnight,
+    slotStep,
+    serviceDurationMinutes: duration,
+    blockingCount: blocking.length,
+    slotsCount: slots.length,
+    slotsPreview: slots.slice(0, 12),
+  });
 
   return slots;
 }
@@ -153,6 +236,13 @@ export async function bookingOverlapsBlockingAppointment(
   const dateUtcMidnight = utcStartOfDay(dateInput);
   if (!dateUtcMidnight) return true;
 
+  const business = await Business.findById(businessId).select('workingHours').lean();
+  const dayKey = utcWeekdayKey(dateUtcMidnight);
+  const day = normalizeWorkingHoursDay(business?.workingHours, dayKey);
+  const openM = timeToMinutes(day?.open);
+  const closeRawM = timeToMinutes(day?.close);
+  const overnight = isOvernightSchedule(openM, closeRawM);
+
   const filter = {
     business: businessId,
     date: dateUtcMidnight,
@@ -164,17 +254,23 @@ export async function bookingOverlapsBlockingAppointment(
 
   const blocking = await Appointment.find(filter).select('startTime endTime').lean();
 
-  const startM = timeToMinutes(startStr);
-  const endM = timeToMinutes(endStr);
-  if (startM === null || endM === null || endM <= startM) return true;
+  let startM = timeToMinutes(startStr);
+  let endM = timeToMinutes(endStr);
+  startM = normalizeTimeIntoWindow(startM, openM ?? 0, overnight);
+  endM = normalizeTimeIntoWindow(endM, openM ?? 0, overnight);
+  if (startM === null || endM === null) return true;
+  if (endM <= startM) endM += MINUTES_IN_DAY;
 
   for (const appt of blocking) {
-    const as = timeToMinutes(appt.startTime);
-    const ae = timeToMinutes(appt.endTime);
-    if (as === null || ae === null || ae <= as) continue;
+    let as = timeToMinutes(appt.startTime);
+    let ae = timeToMinutes(appt.endTime);
+    as = normalizeTimeIntoWindow(as, openM ?? 0, overnight);
+    ae = normalizeTimeIntoWindow(ae, openM ?? 0, overnight);
+    if (as === null || ae === null) continue;
+    if (ae <= as) ae += MINUTES_IN_DAY;
     if (intervalsOverlapHalfOpen(startM, endM, as, ae)) return true;
   }
   return false;
 }
 
-export { addMinutesToClock, timeToMinutes };
+export { addMinutesToClock, timeToMinutes, minutesToTime, isOvernightSchedule };

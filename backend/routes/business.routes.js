@@ -7,12 +7,14 @@ import {
   getMyBusiness,
   updateBusiness,
   uploadImages,
+  addImageByUrl,
   deleteImage,
   addService,
   updateService,
   deleteService,
   getAllBusinesses,
   getBusinessById,
+  deleteBusiness,
 } from '../controllers/business.controller.js';
 
 const router = express.Router();
@@ -21,6 +23,7 @@ router.get('/', getAllBusinesses);
 
 router.get('/me', protect, restrictTo('owner'), attachBusiness, getMyBusiness);
 router.patch('/me', protect, restrictTo('owner'), attachBusiness, updateBusiness);
+router.delete('/me', protect, restrictTo('owner'), attachBusiness, deleteBusiness);
 router.post(
   '/me/images',
   protect,
@@ -29,6 +32,7 @@ router.post(
   wrapMulter(uploadMultiple),
   uploadImages
 );
+router.post('/me/images/url', protect, restrictTo('owner'), attachBusiness, addImageByUrl);
 router.delete('/me/images', protect, restrictTo('owner'), attachBusiness, deleteImage);
 router.post('/me/services', protect, restrictTo('owner'), attachBusiness, addService);
 router.patch('/me/services/:serviceId', protect, restrictTo('owner'), attachBusiness, updateService);

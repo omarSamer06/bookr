@@ -38,6 +38,7 @@ async function findOwnedBusiness(ownerId) {
 export const getAvailableSlotsHandler = async (req, res) => {
   try {
     const { businessId, date, serviceId } = req.query;
+    console.log('[slots] query', { businessId, serviceId, date });
 
     if (!mongoose.Types.ObjectId.isValid(String(businessId || ''))) {
       return res.status(400).json({
@@ -74,8 +75,15 @@ export const getAvailableSlotsHandler = async (req, res) => {
     }
 
     const service = business.services.id(serviceId);
-    if (!service?.isActive) {
-      return res.status(404).json({
+    if (!service) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service not found',
+        data: {},
+      });
+    }
+    if (service.isActive === false) {
+      return res.status(400).json({
         success: false,
         message: 'Service not found',
         data: {},
@@ -83,6 +91,7 @@ export const getAvailableSlotsHandler = async (req, res) => {
     }
 
     const slots = await getAvailableSlots(business._id, parsedDate, service.duration);
+    console.log('[slots] result', { businessId: String(business._id), date, serviceId, count: slots.length, preview: slots.slice(0, 12) });
 
     return res.status(200).json({
       success: true,
@@ -102,7 +111,7 @@ export const getAvailableSlotsHandler = async (req, res) => {
 /** Persists a booking after recomputing availability so stale selections cannot overlap */
 export const createAppointment = async (req, res) => {
   try {
-    const { businessId, serviceId, date, startTime, notes, paymentIntentId } = req.body;
+    const { businessId, serviceId, date, startTime, notes, paymentIntentId, paymentMethod } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(String(businessId || ''))) {
       return res.status(400).json({
@@ -191,6 +200,18 @@ export const createAppointment = async (req, res) => {
       });
     }
 
+    const mode = business.paymentMode || 'both';
+    const chosenMethod =
+      mode === 'both' ? String(paymentMethod || 'online') : mode === 'on_arrival' ? 'on_arrival' : 'online';
+
+    if (!['online', 'on_arrival'].includes(chosenMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: 'paymentMethod must be online or on_arrival',
+        data: {},
+      });
+    }
+
     const price = Number(service.price);
     const isFree = Number.isFinite(price) && price === 0;
 
@@ -198,7 +219,10 @@ export const createAppointment = async (req, res) => {
     let initialPaymentStatus = 'unpaid';
     let initialStatus = 'pending';
 
-    if (isFree) {
+    if (mode === 'on_arrival' || chosenMethod === 'on_arrival') {
+      initialPaymentStatus = 'on_arrival';
+      initialStatus = 'pending';
+    } else if (isFree) {
       initialPaymentStatus = 'paid';
       initialStatus = 'confirmed';
     } else {
@@ -257,10 +281,13 @@ export const createAppointment = async (req, res) => {
       .populate({ path: 'business', select: 'name category location phone' })
       .populate({ path: 'client', select: 'name email phone' });
 
-    if (isFree) {
-      sendAppointmentConfirmation(populated).catch((err) =>
-        console.error('[notify] free confirmation', err.message)
-      );
+    // Booking succeeded even if notifications fail (mail/SMS providers can be flaky), so errors must never block 201.
+    if (initialPaymentStatus === 'paid' || initialPaymentStatus === 'on_arrival') {
+      try {
+        await sendAppointmentConfirmation(populated);
+      } catch (err) {
+        console.error('[notify] confirmation', err.message);
+      }
     }
 
     return res.status(201).json({

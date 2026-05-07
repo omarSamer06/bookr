@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const categories = ['beauty', 'healthcare', 'fitness', 'education', 'consulting', 'other'];
+const paymentModes = ['online', 'on_arrival', 'both'];
 
 const daySchema = new mongoose.Schema(
   {
@@ -105,7 +106,11 @@ const businessSchema = new mongoose.Schema(
       default: () => ({}),
     },
     phone: { type: String, trim: true, default: '' },
-    website: { type: String, trim: true, default: '' },
+    paymentMode: {
+      type: String,
+      enum: paymentModes,
+      default: 'both',
+    },
     images: [{ type: String }],
     isActive: {
       type: Boolean,
@@ -123,4 +128,4 @@ businessSchema.index({ 'location.city': 1, isActive: 1 });
 const Business = mongoose.model('Business', businessSchema);
 
 export default Business;
-export { categories as businessCategories };
+export { categories as businessCategories, paymentModes as businessPaymentModes };

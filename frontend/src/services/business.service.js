@@ -94,6 +94,16 @@ export async function deleteImage(url) {
   }
 }
 
+export async function addImageByUrl(url) {
+  try {
+    const { data } = await api.post('/businesses/me/images/url', { url })
+    if (!data.success) throw new Error(data.message)
+    return data.data.business
+  } catch (err) {
+    throw new Error(pickMessage(err), { cause: err })
+  }
+}
+
 export async function addService(payload) {
   try {
     const { data } = await api.post('/businesses/me/services', payload)
@@ -119,6 +129,16 @@ export async function deleteService(serviceId) {
     const { data } = await api.delete(`/businesses/me/services/${serviceId}`)
     if (!data.success) throw new Error(data.message)
     return data.data.business
+  } catch (err) {
+    throw new Error(pickMessage(err), { cause: err })
+  }
+}
+
+export async function deleteBusiness() {
+  try {
+    const { data } = await api.delete('/businesses/me')
+    if (!data.success) throw new Error(data.message)
+    return data.data
   } catch (err) {
     throw new Error(pickMessage(err), { cause: err })
   }

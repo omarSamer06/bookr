@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Clock, Globe, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { ArrowLeft, Clock, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,6 +50,12 @@ export default function BusinessDetailPage() {
     retry: false,
   })
 
+  // Keep hook order stable; only fire the side effect when data is ready.
+  useEffect(() => {
+    if (!business?._id) return
+    openChat(business._id, { openWindow: false, businessName: business.name })
+  }, [business?._id, business?.name, openChat])
+
   if (!id) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
@@ -74,12 +80,6 @@ export default function BusinessDetailPage() {
   }
 
   const activeServices = (business.services ?? []).filter((s) => s.isActive !== false)
-
-  // Prime the assistant with this business context without opening the window.
-  useEffect(() => {
-    if (!business?._id) return
-    openChat(business._id, { openWindow: false, businessName: business.name })
-  }, [business?._id, business?.name, openChat])
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
@@ -221,19 +221,6 @@ export default function BusinessDetailPage() {
                   <Phone className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
                   <a href={`tel:${business.phone}`} className="font-medium text-indigo-600 underline-offset-4 hover:underline">
                     {business.phone}
-                  </a>
-                </div>
-              ) : null}
-              {business.website ? (
-                <div className="flex gap-3">
-                  <Globe className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
-                  <a
-                    href={business.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all font-medium text-indigo-600 underline-offset-4 hover:underline"
-                  >
-                    {business.website}
                   </a>
                 </div>
               ) : null}

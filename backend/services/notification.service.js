@@ -40,7 +40,7 @@ async function loadAppointmentForNotify(appointmentOrId) {
   if (!mongoose.Types.ObjectId.isValid(String(id))) return null;
   return Appointment.findById(id)
     .populate({ path: 'client', select: 'name email phone' })
-    .populate({ path: 'business', select: 'name location phone website category' });
+    .populate({ path: 'business', select: 'name location phone category' });
 }
 
 function buildContext(appt) {
@@ -171,6 +171,9 @@ function buildSmsPayload(type, ctx) {
  */
 export async function sendNotification({ userId, appointmentId, type, channels }) {
   try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[notification] sending', { type, userId: String(userId), appointmentId: String(appointmentId) });
+    }
     const user = await User.findById(userId).select('name email phone');
     const appointment = await loadAppointmentForNotify(appointmentId);
 
@@ -250,7 +253,7 @@ export async function sendNotification({ userId, appointmentId, type, channels }
           }
 
           await sendEmail({ to: user.email, subject: mail.subject, html: mail.html });
-          await persistNotification({
+          const notification = await persistNotification({
             userId,
             appointmentId,
             type,
@@ -259,9 +262,12 @@ export async function sendNotification({ userId, appointmentId, type, channels }
             message: mail.subject,
             status: 'sent',
           });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[notification] saved', { id: String(notification?._id), channel: 'email', status: 'sent' });
+          }
         } catch (err) {
           console.error('[notification] email failed', err.message);
-          await persistNotification({
+          const notification = await persistNotification({
             userId,
             appointmentId,
             type,
@@ -270,6 +276,9 @@ export async function sendNotification({ userId, appointmentId, type, channels }
             message: String(err.message || 'email_failed').slice(0, 400),
             status: 'failed',
           });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[notification] saved', { id: String(notification?._id), channel: 'email', status: 'failed' });
+          }
         }
       }
 
@@ -278,7 +287,7 @@ export async function sendNotification({ userId, appointmentId, type, channels }
         if (!smsBody) continue;
         try {
           await sendSMS({ to: user.phone, message: smsBody });
-          await persistNotification({
+          const notification = await persistNotification({
             userId,
             appointmentId,
             type,
@@ -287,9 +296,12 @@ export async function sendNotification({ userId, appointmentId, type, channels }
             message: smsBody,
             status: 'sent',
           });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[notification] saved', { id: String(notification?._id), channel: 'sms', status: 'sent' });
+          }
         } catch (err) {
           console.error('[notification] sms failed', err.message);
-          await persistNotification({
+          const notification = await persistNotification({
             userId,
             appointmentId,
             type,
@@ -298,6 +310,9 @@ export async function sendNotification({ userId, appointmentId, type, channels }
             message: String(err.message || 'sms_failed').slice(0, 400),
             status: 'failed',
           });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[notification] saved', { id: String(notification?._id), channel: 'sms', status: 'failed' });
+          }
         }
       }
     }

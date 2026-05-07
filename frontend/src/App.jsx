@@ -7,6 +7,7 @@ import NotificationBootstrap from '@/components/shared/NotificationBootstrap'
 import OwnerBusinessGate from '@/components/shared/OwnerBusinessGate'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import PublicShell from '@/components/shared/PublicShell'
+import SmartShell from '@/components/shared/SmartShell'
 import ChatWidget from '@/components/chatbot/ChatWidget'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
@@ -47,6 +48,10 @@ export default function App() {
         window.history.replaceState({}, document.title, window.location.pathname)
       }
       await initAuth()
+      // OAuth redirect lands on public routes; push into the authenticated area once the session is initialized.
+      if (urlToken && useAuthStore.getState().isAuthenticated) {
+        window.location.replace('/dashboard')
+      }
     }
     bootstrap()
   }, [initAuth])
@@ -58,6 +63,9 @@ export default function App() {
         <Routes>
           <Route element={<PublicShell />}>
             <Route path="/" element={<LandingPage />} />
+          </Route>
+
+          <Route element={<SmartShell />}>
             <Route path="/businesses" element={<BusinessListPage />} />
             <Route path="/businesses/:id" element={<BusinessDetailPage />} />
           </Route>

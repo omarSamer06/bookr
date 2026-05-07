@@ -10,7 +10,7 @@ const serviceSnapshotSchema = new mongoose.Schema(
 );
 
 const appointmentStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'no-show'];
-const paymentStatuses = ['unpaid', 'paid', 'refunded'];
+const paymentStatuses = ['unpaid', 'paid', 'refunded', 'on_arrival'];
 
 const appointmentSchema = new mongoose.Schema(
   {

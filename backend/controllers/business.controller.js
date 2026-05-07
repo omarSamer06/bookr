@@ -1,13 +1,15 @@
 import mongoose from 'mongoose';
 import fs from 'fs/promises';
-import Business, { businessCategories } from '../models/Business.js';
+import Business, { businessCategories, businessPaymentModes } from '../models/Business.js';
+import Appointment from '../models/Appointment.js';
+import Notification from '../models/Notification.js';
 import {
   uploadImage,
   deleteImage as destroyCloudinaryImage,
   extractPublicIdFromUrl,
 } from '../services/cloudinary.service.js';
 
-const MAX_TOTAL_IMAGES = 15;
+const MAX_TOTAL_IMAGES = 5;
 
 async function unlinkDiskFiles(files) {
   await Promise.all(
@@ -26,8 +28,7 @@ export const createBusiness = async (req, res) => {
       });
     }
 
-    const { name, description, category, location, phone, website, workingHours, breaks, slotDuration } =
-      req.body;
+    const { name, description, category, location, phone, workingHours, breaks, slotDuration } = req.body;
 
     if (!name?.trim()) {
       return res.status(400).json({
@@ -65,7 +66,6 @@ export const createBusiness = async (req, res) => {
       category,
       location: location ?? {},
       phone: phone?.trim() ?? '',
-      website: website?.trim() ?? '',
       workingHours: workingHours ?? {},
       breaks: breaks ?? [],
       slotDuration: resolvedSlot,
@@ -112,7 +112,7 @@ export const updateBusiness = async (req, res) => {
       category,
       location,
       phone,
-      website,
+      paymentMode,
       workingHours,
       breaks,
       slotDuration,
@@ -135,7 +135,16 @@ export const updateBusiness = async (req, res) => {
       Object.assign(business.location, location);
     }
     if (phone !== undefined) business.phone = String(phone).trim();
-    if (website !== undefined) business.website = String(website).trim();
+    if (paymentMode !== undefined) {
+      if (!businessPaymentModes.includes(String(paymentMode))) {
+        return res.status(400).json({
+          success: false,
+          message: `paymentMode must be one of: ${businessPaymentModes.join(', ')}`,
+          data: {},
+        });
+      }
+      business.paymentMode = String(paymentMode);
+    }
     if (workingHours !== undefined) business.workingHours = workingHours;
     if (breaks !== undefined) business.breaks = breaks;
     if (slotDuration !== undefined) {
@@ -223,6 +232,55 @@ export const uploadImages = async (req, res) => {
   }
 };
 
+/** Skips Cloudinary because externally hosted URLs do not require upload or storage duplication */
+export const addImageByUrl = async (req, res) => {
+  try {
+    const { url } = req.body || {};
+    const business = req.business;
+
+    const normalized = typeof url === 'string' ? url.trim() : '';
+    if (!normalized || (!normalized.startsWith('http://') && !normalized.startsWith('https://'))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image URL',
+        data: {},
+      });
+    }
+
+    if ((business.images ?? []).length >= MAX_TOTAL_IMAGES) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 5 images allowed',
+        data: {},
+      });
+    }
+
+    if ((business.images ?? []).includes(normalized)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL already added',
+        data: {},
+      });
+    }
+
+    business.images.push(normalized);
+    await business.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Image added successfully',
+      data: { business },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not add image',
+      data: {},
+    });
+  }
+};
+
 export const deleteImage = async (req, res) => {
   try {
     const { url } = req.body;
@@ -269,6 +327,49 @@ export const deleteImage = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Could not delete image',
+      data: {},
+    });
+  }
+};
+
+/** Hard-delete owner business and all dependent rows so no orphaned bookings remain */
+export const deleteBusiness = async (req, res) => {
+  try {
+    const business = req.business;
+
+    const appointmentIds = (
+      await Appointment.find({ business: business._id }).select('_id').lean()
+    ).map((a) => a._id);
+
+    if (appointmentIds.length) {
+      await Notification.deleteMany({ appointment: { $in: appointmentIds } });
+      await Appointment.deleteMany({ _id: { $in: appointmentIds } });
+    }
+
+    const urls = business.images ?? [];
+    await Promise.all(
+      urls.map(async (url) => {
+        try {
+          const publicId = extractPublicIdFromUrl(url);
+          await destroyCloudinaryImage(publicId).catch(() => {});
+        } catch {
+          // Ignore non-Cloudinary URLs; deletion should still proceed.
+        }
+      })
+    );
+
+    await Business.deleteOne({ _id: business._id });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Business deleted successfully',
+      data: {},
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not delete business',
       data: {},
     });
   }

@@ -25,7 +25,7 @@ const roleLabels = {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { setAuth, isLoading: bootLoading } = useAuth()
+  const { isLoading: bootLoading } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,15 +38,14 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const { user, token } = await authService.register({
+      await authService.register({
         name,
         email,
         password,
         role,
       })
-      setAuth(user, token)
-      toast.success('Account created')
-      navigate('/dashboard', { replace: true })
+      toast.success('Account created successfully! Please log in.')
+      navigate('/login', { replace: true })
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -55,7 +54,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-bookr-warm via-bookr-lavender/40 to-bookr-warm p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-b from-bookr-warm via-bookr-lavender/40 to-bookr-warm p-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-16 right-[10%] h-64 w-64 rounded-full bg-purple-400/15 blur-3xl" />
       </div>
@@ -63,7 +62,7 @@ export default function RegisterPage() {
         <CardHeader className="space-y-4 text-center">
           <Link
             to="/"
-            className="font-heading text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent"
+            className="font-heading text-2xl font-bold tracking-tight bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent"
           >
             Bookr
           </Link>

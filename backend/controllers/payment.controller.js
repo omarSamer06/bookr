@@ -56,6 +56,14 @@ export const createPaymentIntent = async (req, res) => {
       });
     }
 
+    if (business.paymentMode === 'on_arrival') {
+      return res.status(400).json({
+        success: false,
+        message: 'This business only accepts payment on arrival',
+        data: {},
+      });
+    }
+
     const service = business.services.id(serviceId);
     if (!service?.isActive) {
       return res.status(404).json({
@@ -145,7 +153,7 @@ export const handleWebhook = async (req, res) => {
       if (updated) {
         const populated = await Appointment.findById(updated._id)
           .populate({ path: 'client', select: 'name email phone' })
-          .populate({ path: 'business', select: 'name location phone website' });
+          .populate({ path: 'business', select: 'name location phone' });
 
         sendAppointmentConfirmation(populated).catch((err) =>
           console.error('[notify] paid confirmation', err.message)
@@ -252,6 +260,71 @@ export const refundPayment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message?.includes?.('Stripe') ? err.message : 'Could not issue refund',
+      data: {},
+    });
+  }
+};
+
+/** Allows owners to reconcile cash/card-on-arrival payments without Stripe involvement */
+export const markAsPaid = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(String(appointmentId || ''))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid appointment id',
+        data: {},
+      });
+    }
+
+    const business = await findOwnedBusiness(req.user._id);
+    if (!business) {
+      return res.status(404).json({
+        success: false,
+        message: 'Business not found',
+        data: {},
+      });
+    }
+
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      business: business._id,
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+        data: {},
+      });
+    }
+
+    if (appointment.paymentStatus !== 'on_arrival') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pay-on-arrival appointments can be marked as paid',
+        data: {},
+      });
+    }
+
+    appointment.paymentStatus = 'paid';
+    await appointment.save();
+
+    const populated = await Appointment.findById(appointment._id)
+      .populate({ path: 'client', select: 'name email phone' })
+      .populate({ path: 'business', select: 'name owner category location phone paymentMode' });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment marked as paid',
+      data: { appointment: populated },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not mark appointment as paid',
       data: {},
     });
   }

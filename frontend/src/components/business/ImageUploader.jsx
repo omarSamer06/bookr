@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { ImagePlus, Trash2 } from 'lucide-react'
+import { ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import {
   businessQueryKeys,
+  addImageByUrl,
   deleteImage,
   uploadImages,
 } from '@/services/business.service.js'
@@ -15,6 +17,8 @@ export default function ImageUploader({ business }) {
   const qc = useQueryClient()
   const inputRef = useRef(null)
   const [dragActive, setDragActive] = useState(false)
+  const [urlValue, setUrlValue] = useState('')
+  const [urlError, setUrlError] = useState('')
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: businessQueryKeys.mine })
@@ -46,6 +50,17 @@ export default function ImageUploader({ business }) {
     onError: (err) => toast.error(err.message),
   })
 
+  const addUrlMutation = useMutation({
+    mutationFn: (url) => addImageByUrl(url),
+    onSuccess: () => {
+      toast.success('Image added successfully')
+      setUrlValue('')
+      setUrlError('')
+      invalidateAll()
+    },
+    onError: (err) => toast.error(err.message),
+  })
+
   const handleFiles = useCallback(
     (fileList) => {
       const arr = Array.from(fileList || []).filter((f) => f.type.startsWith('image/'))
@@ -62,6 +77,20 @@ export default function ImageUploader({ business }) {
   }
 
   const images = business?.images ?? []
+
+  const submitUrl = () => {
+    const url = String(urlValue || '').trim()
+    if (!url) {
+      setUrlError('Please paste an image URL.')
+      return
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setUrlError('URL must start with http:// or https://')
+      return
+    }
+    setUrlError('')
+    addUrlMutation.mutate(url)
+  }
 
   return (
     <div className="space-y-4">
@@ -87,7 +116,7 @@ export default function ImageUploader({ business }) {
           handleFiles(e.dataTransfer.files)
         }}
         className={cn(
-          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-gradient-to-br from-indigo-50/50 to-purple-50/40 px-6 py-10 text-center text-sm transition-colors',
+          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-linear-to-br from-indigo-50/50 to-purple-50/40 px-6 py-10 text-center text-sm transition-colors',
           dragActive && 'border-indigo-400 bg-indigo-50 text-indigo-800'
         )}
       >
@@ -107,6 +136,42 @@ export default function ImageUploader({ business }) {
       {uploadMutation.isPending ? (
         <p className="text-sm font-medium text-indigo-700">Uploading…</p>
       ) : null}
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-bookr-muted">or</span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={urlValue}
+            onChange={(e) => {
+              setUrlValue(e.target.value)
+              if (urlError) setUrlError('')
+            }}
+            placeholder="Paste image URL here..."
+            className={cn('rounded-xl', urlError && 'border-red-300 focus-visible:border-red-400 focus-visible:ring-red-200')}
+          />
+          <Button
+            type="button"
+            onClick={submitUrl}
+            disabled={addUrlMutation.isPending}
+            className="rounded-xl bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 text-white"
+          >
+            {addUrlMutation.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Adding…
+              </>
+            ) : (
+              'Add'
+            )}
+          </Button>
+        </div>
+        {urlError ? <p className="text-xs font-medium text-red-600">{urlError}</p> : null}
+      </div>
 
       <div className="columns-2 gap-4 space-y-0 sm:columns-3">
         {images.map((url) => (

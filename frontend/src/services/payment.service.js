@@ -24,3 +24,13 @@ export async function refundPayment(appointmentId) {
     throw new Error(pickMessage(err), { cause: err })
   }
 }
+
+export async function markAsPaid(appointmentId) {
+  try {
+    const { data: res } = await api.patch(`/payments/mark-paid/${appointmentId}`)
+    if (!res.success) throw new Error(res.message)
+    return res.data.appointment
+  } catch (err) {
+    throw new Error(pickMessage(err), { cause: err })
+  }
+}
