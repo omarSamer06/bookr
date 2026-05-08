@@ -31,7 +31,7 @@ import {
   getMyAppointments,
   updateAppointmentStatus,
 } from '@/services/appointment.service.js'
-import { businessQueryKeys, getMyBusiness } from '@/services/business.service.js'
+import { businessQueryKeys, getBusinessById, getMyBusiness } from '@/services/business.service.js'
 import { useChatbotStore } from '@/store/chatbotStore'
 
 const roleLabels = {
@@ -137,14 +137,33 @@ function BusinessThumb({ business, idx }) {
     'from-violet-100 to-indigo-100',
     'from-purple-100 to-fuchsia-100',
   ][idx % 3]
-  return img ? (
-    <img src={img} alt="" className="size-full object-cover" />
-  ) : (
-    <div className={cn('flex size-full items-center justify-center bg-linear-to-br text-xs font-semibold text-indigo-700', fallback)}>
-      {String(business?.name ?? 'Business')
-        .trim()
-        .slice(0, 2)
-        .toUpperCase()}
+  const initials = String(business?.name ?? 'Business')
+    .trim()
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="relative size-full">
+      {img ? (
+        <img
+          src={img}
+          alt={business?.name ?? 'Business'}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.style.display = 'none'
+            e.target.nextSibling.style.display = 'flex'
+          }}
+        />
+      ) : null}
+      <div
+        className={cn(
+          'absolute inset-0 items-center justify-center bg-linear-to-br text-xs font-semibold text-indigo-700',
+          fallback
+        )}
+        style={{ display: img ? 'none' : 'flex' }}
+      >
+        {initials}
+      </div>
     </div>
   )
 }
@@ -258,6 +277,26 @@ export default function DashboardPage() {
     }
     return out
   }, [clientAllAppointments])
+
+  // Appointment rows don't include business images; hydrate from business detail endpoint for visuals.
+  const recentBusinessIds = useMemo(
+    () => recentBusinesses.map((b) => b?._id).filter(Boolean),
+    [recentBusinesses]
+  )
+
+  const recentBusinessesDetailsQuery = useQuery({
+    queryKey: ['businesses', 'recently-visited', recentBusinessIds],
+    queryFn: async () => {
+      const results = await Promise.allSettled(recentBusinessIds.map((id) => getBusinessById(id)))
+      return results.map((r, idx) => (r.status === 'fulfilled' ? r.value : recentBusinesses[idx]))
+    },
+    enabled: Boolean(isClient) && recentBusinessIds.length > 0,
+    staleTime: 60 * 1000,
+    retry: false,
+  })
+
+  const recentBusinessesEnriched =
+    recentBusinessesDetailsQuery.data?.filter(Boolean) ?? recentBusinesses
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -405,7 +444,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {recentBusinesses.map((biz, idx) => (
+                {recentBusinessesEnriched.map((biz, idx) => (
                   <Card
                     key={biz._id ?? idx}
                     className="overflow-hidden border-gray-100 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
