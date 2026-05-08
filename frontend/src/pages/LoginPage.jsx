@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Building2, Loader2, User } from 'lucide-react'
+import { Building2, Loader2 } from 'lucide-react'
 import GoogleMark from '@/components/shared/GoogleMark'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -111,12 +111,12 @@ export default function LoginPage() {
 
           <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
             <div className="space-y-1">
-              <p className="font-heading text-sm font-bold text-bookr-text">🎯 Try Demo Accounts</p>
+              <p className="font-heading text-sm font-bold text-bookr-text">🎯 Try Demo Account</p>
               <p className="text-xs text-bookr-muted">Click to auto-fill credentials</p>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
+            <div className="mt-4 flex justify-center">
+              <div className="w-full max-w-sm rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   <span className="flex size-10 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-600 via-violet-600 to-purple-600 text-white shadow-sm">
                     <Building2 className="size-5" aria-hidden />
@@ -139,34 +139,6 @@ export default function LoginPage() {
                   size="sm"
                   className="mt-3 w-full bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 text-white hover:opacity-95"
                   onClick={() => fillDemo({ demoEmail: 'owner@bookrdemo.com', demoPassword: 'Demo@1234' })}
-                >
-                  Use This Account
-                </Button>
-              </div>
-
-              <div className="rounded-2xl border border-indigo-100 bg-white p-4 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-2xl bg-linear-to-br from-violet-600 via-indigo-600 to-fuchsia-600 text-white shadow-sm">
-                    <User className="size-5" aria-hidden />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-heading text-sm font-bold text-bookr-text">Client</p>
-                    <p className="mt-1 text-xs text-bookr-muted">Browse businesses, book appointments, make payments</p>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-1 rounded-xl border border-indigo-100/60 bg-indigo-50/40 px-3 py-2 text-xs">
-                  <p className="truncate">
-                    <span className="font-semibold text-bookr-text">Email:</span> client@bookrdemo.com
-                  </p>
-                  <p>
-                    <span className="font-semibold text-bookr-text">Password:</span> Demo@1234
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-3 w-full bg-linear-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white hover:opacity-95"
-                  onClick={() => fillDemo({ demoEmail: 'client@bookrdemo.com', demoPassword: 'Demo@1234' })}
                 >
                   Use This Account
                 </Button>
