@@ -107,7 +107,7 @@ export default function OwnerAppointmentsPage() {
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight text-bookr-text sm:text-4xl">Appointments</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-bookr-muted sm:text-base">
-            Filter the live schedule — confirming here matches what clients already see on their end.
+            Filter the live schedule — clients are confirmed automatically when they book.
           </p>
         </div>
         <Link to="/dashboard" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-gray-200')}>
@@ -179,7 +179,6 @@ export default function OwnerAppointmentsPage() {
               key={appt._id}
               appointment={appt}
               viewType="owner"
-              onConfirm={() => patchStatus.mutate({ id: appt._id, next: 'confirmed' })}
               onComplete={() => patchStatus.mutate({ id: appt._id, next: 'completed' })}
               onNoShow={() => patchStatus.mutate({ id: appt._id, next: 'no-show' })}
               onCancel={() => cancelMut.mutate(appt._id)}

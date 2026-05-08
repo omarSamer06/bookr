@@ -217,11 +217,11 @@ export const createAppointment = async (req, res) => {
 
     let paymentIntentIdNorm = '';
     let initialPaymentStatus = 'unpaid';
-    let initialStatus = 'pending';
+    let initialStatus = 'confirmed';
 
     if (mode === 'on_arrival' || chosenMethod === 'on_arrival') {
       initialPaymentStatus = 'on_arrival';
-      initialStatus = 'pending';
+      initialStatus = 'confirmed';
     } else if (isFree) {
       initialPaymentStatus = 'paid';
       initialStatus = 'confirmed';
@@ -518,7 +518,7 @@ export const updateAppointmentStatus = async (req, res) => {
       });
     }
 
-    const allowed = ['confirmed', 'completed', 'no-show'];
+    const allowed = ['completed', 'no-show', 'cancelled'];
     if (!allowed.includes(String(status))) {
       return res.status(400).json({
         success: false,
@@ -560,6 +560,10 @@ export const updateAppointmentStatus = async (req, res) => {
     appointment.status = status;
     if (status === 'completed') {
       appointment.completedAt = new Date();
+    }
+    if (status === 'cancelled') {
+      appointment.cancelledAt = new Date();
+      appointment.cancelledBy = req.user._id;
     }
     await appointment.save();
 
@@ -754,7 +758,7 @@ export const rescheduleAppointment = async (req, res) => {
     appointment.date = utcStartOfDay(parsedDate);
     appointment.startTime = normalizedStart;
     appointment.endTime = endTime;
-    appointment.status = 'pending';
+    appointment.status = 'confirmed';
     appointment.cancelledAt = null;
     appointment.cancelledBy = null;
     appointment.reminderSent = false;

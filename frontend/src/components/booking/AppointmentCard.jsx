@@ -81,7 +81,6 @@ export default function AppointmentCard({
   viewType = 'client',
   onCancel,
   onReschedule,
-  onConfirm,
   onComplete,
   onNoShow,
   onRefund,
@@ -119,8 +118,6 @@ export default function AppointmentCard({
 
   const showClientReschedule =
     viewType === 'client' && Boolean(onReschedule) && status === 'pending' && future
-
-  const showOwnerConfirm = viewType === 'owner' && Boolean(onConfirm) && status === 'pending'
 
   const showOwnerComplete = viewType === 'owner' && Boolean(onComplete) && status === 'confirmed'
 
@@ -195,12 +192,6 @@ export default function AppointmentCard({
           {showClientReschedule ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => onReschedule(appointment)}>
               Reschedule
-            </Button>
-          ) : null}
-
-          {showOwnerConfirm ? (
-            <Button type="button" size="sm" onClick={() => onConfirm(appointment)}>
-              Confirm
             </Button>
           ) : null}
           {showOwnerComplete ? (
