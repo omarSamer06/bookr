@@ -35,6 +35,47 @@ async function findOwnedBusiness(ownerId) {
   return Business.findOne({ owner: ownerId });
 }
 
+/** Aligns policy math with how appointments store UTC-midnight dates plus HH:mm start times */
+function hoursUntilAppointmentStart(appointment) {
+  const raw = appointment.date;
+  const day =
+    raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '').slice(0, 10);
+  const start = String(appointment.startTime ?? '').trim();
+  if (!day || day.length < 10 || !start) return null;
+  const [hh = '00', mm = '00'] = start.split(':');
+  const appointmentStart = new Date(
+    `${day}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:00.000Z`
+  );
+  if (!Number.isFinite(appointmentStart.getTime())) return null;
+  return (appointmentStart.getTime() - Date.now()) / (1000 * 60 * 60);
+}
+
+/** Blocks client cancellations that violate the business policy while owners remain unrestricted */
+function assertClientCancellationAllowed(business, appointment) {
+  const policy = business?.cancellationPolicy ?? {};
+  const allowed = policy.allowed !== false;
+  const minHours = Number(policy.hoursBeforeAppointment ?? 24);
+
+  if (!allowed) {
+    const err = new Error(
+      'This business does not allow cancellations. Please contact them directly.'
+    );
+    err.code = 'POLICY_NOT_ALLOWED';
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const hoursRemaining = hoursUntilAppointmentStart(appointment);
+  if (hoursRemaining !== null && hoursRemaining < minHours) {
+    const err = new Error(
+      `Cancellations must be made at least ${minHours} hours before the appointment. Please contact the business directly.`
+    );
+    err.code = 'POLICY_WINDOW';
+    err.statusCode = 400;
+    throw err;
+  }
+}
+
 /** Returns grid-aligned strings clients can pick before authentication blocks writes */
 export const getAvailableSlotsHandler = async (req, res) => {
   try {
@@ -334,7 +375,7 @@ export const getMyAppointments = async (req, res) => {
       .sort({ date: 1, startTime: 1 })
       .populate({
         path: 'business',
-        select: 'name owner category location',
+        select: 'name owner category location cancellationPolicy',
         populate: { path: 'owner', select: 'name email phone' },
       })
       .lean();
@@ -412,6 +453,7 @@ export const getBusinessAppointments = async (req, res) => {
     const appointments = await Appointment.find(filter)
       .sort({ date: 1, startTime: 1 })
       .populate({ path: 'client', select: 'name email phone' })
+      .populate({ path: 'business', select: 'name cancellationPolicy' })
       .lean();
 
     const appointmentIds = appointments.map((a) => a._id);
@@ -455,7 +497,7 @@ export const getAppointmentById = async (req, res) => {
     const appointment = await Appointment.findById(id)
       .populate({
         path: 'business',
-        select: 'name owner category location phone',
+        select: 'name owner category location phone cancellationPolicy',
         populate: { path: 'owner', select: 'name email phone' },
       })
       .populate({ path: 'client', select: 'name email phone' })
@@ -503,7 +545,7 @@ export const getAppointmentById = async (req, res) => {
 async function appointmentAccessibleOrThrow(req, appointmentId) {
   const appt = await Appointment.findById(appointmentId).populate({
     path: 'business',
-    select: 'owner',
+    select: 'owner cancellationPolicy',
   });
 
   if (!appt) {
@@ -642,7 +684,7 @@ export const cancelAppointment = async (req, res) => {
       throw e;
     }
 
-    const { appt } = ctx;
+    const { appt, isOwner } = ctx;
 
     if (appt.status === 'cancelled') {
       return res.status(400).json({
@@ -650,6 +692,21 @@ export const cancelAppointment = async (req, res) => {
         message: 'Appointment is already cancelled',
         data: {},
       });
+    }
+
+    if (!isOwner) {
+      try {
+        assertClientCancellationAllowed(appt.business, appt);
+      } catch (policyErr) {
+        if (policyErr.code === 'POLICY_NOT_ALLOWED' || policyErr.code === 'POLICY_WINDOW') {
+          return res.status(policyErr.statusCode || 400).json({
+            success: false,
+            message: policyErr.message,
+            data: {},
+          });
+        }
+        throw policyErr;
+      }
     }
 
     appt.status = 'cancelled';

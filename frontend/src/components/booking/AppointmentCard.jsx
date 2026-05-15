@@ -3,7 +3,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CalendarClock, Mail, MapPin, User } from 'lucide-react'
-import { isAppointmentFuture, parseAppointmentStartUtc } from '@/lib/bookingUtils'
+import {
+  getClientCancellationEligibility,
+  isAppointmentFuture,
+  parseAppointmentStartUtc,
+} from '@/lib/bookingUtils'
 import { cn } from '@/lib/utils'
 
 /** Turns UTC-backed timestamps into locale strings without leaking TZ assumptions to parents */
@@ -111,11 +115,22 @@ export default function AppointmentCard({
       </span>
     )
 
+  const clientCancelEligibility =
+    viewType === 'client' ? getClientCancellationEligibility(appointment) : { canCancel: true }
+
   const showClientCancel =
     viewType === 'client' &&
     Boolean(onCancel) &&
     (status === 'pending' || status === 'confirmed') &&
-    future
+    future &&
+    clientCancelEligibility.canCancel
+
+  const showClientCancelBlocked =
+    viewType === 'client' &&
+    Boolean(onCancel) &&
+    (status === 'pending' || status === 'confirmed') &&
+    future &&
+    !clientCancelEligibility.canCancel
 
   const showClientReschedule =
     viewType === 'client' && Boolean(onReschedule) && status === 'pending' && future
@@ -211,6 +226,13 @@ export default function AppointmentCard({
             <Button type="button" variant="outline" size="sm" onClick={() => onCancel(appointment)}>
               Cancel
             </Button>
+          ) : null}
+          {showClientCancelBlocked ? (
+            <p className="self-center text-xs text-bookr-muted">
+              {clientCancelEligibility.reason === 'not_allowed'
+                ? 'No cancellations allowed'
+                : `Cannot cancel — less than ${clientCancelEligibility.hoursBeforeAppointment}h before appointment`}
+            </p>
           ) : null}
           {showClientReschedule ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => onReschedule(appointment)}>

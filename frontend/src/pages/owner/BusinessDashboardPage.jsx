@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Building2, CalendarDays, Coffee, Image as ImageIcon, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Building2, CalendarDays, Clock, Coffee, Image as ImageIcon, Plus, Sparkles, Trash2 } from 'lucide-react'
 import BusinessInfoForm from '@/components/business/BusinessInfoForm'
 import ImageUploader from '@/components/business/ImageUploader'
 import ServiceCard from '@/components/business/ServiceCard'
@@ -19,7 +19,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getEffectiveCancellationPolicy } from '@/lib/bookingUtils'
 import { WEEKDAYS, categoryLabel } from '@/lib/businessConstants'
 import { cn } from '@/lib/utils'
 import {
@@ -60,6 +62,8 @@ export default function BusinessDashboardPage() {
 
   const [breakRows, setBreakRows] = useState([])
   const [paymentMode, setPaymentMode] = useState('both')
+  const [cancelAllowed, setCancelAllowed] = useState(true)
+  const [cancelHours, setCancelHours] = useState(24)
 
   const breaksSig =
     business?._id != null ? `${business._id}:${JSON.stringify(business.breaks ?? [])}` : ''
@@ -77,6 +81,21 @@ export default function BusinessDashboardPage() {
     setPrevPaymentSig(paymentSig)
     setPaymentMode(business.paymentMode ?? 'both')
   }
+
+  const cancelSig = business?._id
+    ? `${business._id}:${JSON.stringify(business.cancellationPolicy ?? {})}`
+    : ''
+  const [prevCancelSig, setPrevCancelSig] = useState('')
+  if (business && cancelSig !== prevCancelSig) {
+    setPrevCancelSig(cancelSig)
+    const policy = getEffectiveCancellationPolicy(business)
+    setCancelAllowed(policy.allowed)
+    setCancelHours(policy.hoursBeforeAppointment)
+  }
+
+  const cancelPreviewDescription = cancelAllowed
+    ? `Cancellations must be made at least ${cancelHours} hours before the appointment`
+    : ''
 
   const updateMutation = useMutation({
     mutationFn: updateBusiness,
@@ -359,6 +378,80 @@ export default function BusinessDashboardPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <p className="inline-flex items-center gap-2 text-sm font-semibold text-bookr-text">
+                  <Clock className="size-4 text-indigo-500" aria-hidden />
+                  Cancellation policy
+                </p>
+                <p className="text-sm text-bookr-muted">Control when clients can cancel online.</p>
+              </div>
+              <Button
+                type="button"
+                disabled={
+                  updateMutation.isPending ||
+                  (cancelAllowed === getEffectiveCancellationPolicy(business).allowed &&
+                    cancelHours === getEffectiveCancellationPolicy(business).hoursBeforeAppointment)
+                }
+                onClick={() =>
+                  updateMutation.mutate(
+                    {
+                      cancellationPolicy: {
+                        allowed: cancelAllowed,
+                        hoursBeforeAppointment: cancelHours,
+                        description: cancelPreviewDescription,
+                      },
+                    },
+                    {
+                      onSuccess: () => toast.success('Cancellation policy saved'),
+                    }
+                  )
+                }
+              >
+                Save
+              </Button>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-bookr-text">Allow client cancellations</p>
+                <p className="text-xs text-bookr-muted">When off, clients must contact you directly.</p>
+              </div>
+              <Switch checked={cancelAllowed} onCheckedChange={setCancelAllowed} />
+            </div>
+
+            {cancelAllowed ? (
+              <div className="mt-5 space-y-4">
+                <div className="grid max-w-xs gap-2">
+                  <Label htmlFor="cancel-hours">Minimum hours before appointment</Label>
+                  <Input
+                    id="cancel-hours"
+                    type="number"
+                    min={1}
+                    max={168}
+                    value={cancelHours}
+                    onChange={(e) => {
+                      const n = Number(e.target.value)
+                      if (!Number.isNaN(n)) setCancelHours(Math.min(168, Math.max(1, n)))
+                    }}
+                  />
+                  <p className="text-xs text-bookr-muted">
+                    Clients must cancel at least {cancelHours} hours before their appointment.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-900">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Policy preview</p>
+                  <p className="mt-1">{cancelPreviewDescription}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+                Clients will not be able to cancel online. They must contact you directly.
+              </div>
+            )}
           </div>
         </TabsContent>
 

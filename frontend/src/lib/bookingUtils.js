@@ -36,6 +36,41 @@ export function isAppointmentFuture(appointment) {
   return Number.isFinite(start.getTime()) && start.getTime() > Date.now()
 }
 
+/** Hours from now until the appointment start; null when the timestamp cannot be parsed */
+export function hoursUntilAppointment(appointment) {
+  const start = parseAppointmentStartUtc(appointment)
+  if (!Number.isFinite(start.getTime())) return null
+  return (start.getTime() - Date.now()) / (1000 * 60 * 60)
+}
+
+/** Normalizes business cancellationPolicy with safe defaults for UI and gating */
+export function getEffectiveCancellationPolicy(business) {
+  const policy = business?.cancellationPolicy ?? {}
+  const hoursBeforeAppointment = Number(policy.hoursBeforeAppointment ?? 24)
+  const allowed = policy.allowed !== false
+  const description =
+    String(policy.description ?? '').trim() ||
+    `Cancellations must be made at least ${hoursBeforeAppointment} hours before the appointment`
+  return { allowed, hoursBeforeAppointment, description }
+}
+
+/** Client-side mirror of server cancel rules for hiding the cancel button */
+export function getClientCancellationEligibility(appointment) {
+  const policy = getEffectiveCancellationPolicy(appointment?.business)
+  if (!policy.allowed) {
+    return { canCancel: false, reason: 'not_allowed' }
+  }
+  const hoursRemaining = hoursUntilAppointment(appointment)
+  if (hoursRemaining !== null && hoursRemaining < policy.hoursBeforeAppointment) {
+    return {
+      canCancel: false,
+      reason: 'window_passed',
+      hoursBeforeAppointment: policy.hoursBeforeAppointment,
+    }
+  }
+  return { canCancel: true }
+}
+
 /** Mirrors Mongo weekday keys so disabledDays props stay aligned with Business.workingHours */
 export function weekdayKeyFromLocalIsoDate(isoDateStr) {
   const parts = String(isoDateStr).split('-').map(Number)

@@ -113,6 +113,7 @@ export const updateBusiness = async (req, res) => {
       location,
       phone,
       paymentMode,
+      cancellationPolicy,
       workingHours,
       breaks,
       slotDuration,
@@ -144,6 +145,29 @@ export const updateBusiness = async (req, res) => {
         });
       }
       business.paymentMode = String(paymentMode);
+    }
+    if (cancellationPolicy !== undefined) {
+      const cp = cancellationPolicy;
+      if (cp.allowed !== undefined) {
+        business.cancellationPolicy.allowed = Boolean(cp.allowed);
+      }
+      if (cp.hoursBeforeAppointment !== undefined) {
+        const h = Number(cp.hoursBeforeAppointment);
+        if (Number.isNaN(h) || h < 1 || h > 168) {
+          return res.status(400).json({
+            success: false,
+            message: 'hoursBeforeAppointment must be between 1 and 168',
+            data: {},
+          });
+        }
+        business.cancellationPolicy.hoursBeforeAppointment = h;
+      }
+      if (cp.description !== undefined) {
+        business.cancellationPolicy.description = String(cp.description).trim();
+      } else if (business.cancellationPolicy.allowed) {
+        const hrs = business.cancellationPolicy.hoursBeforeAppointment ?? 24;
+        business.cancellationPolicy.description = `Cancellations must be made at least ${hrs} hours before the appointment`;
+      }
     }
     if (workingHours !== undefined) business.workingHours = workingHours;
     if (breaks !== undefined) business.breaks = breaks;

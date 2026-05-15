@@ -66,6 +66,19 @@ const locationSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const cancellationPolicySchema = new mongoose.Schema(
+  {
+    allowed: { type: Boolean, default: true },
+    hoursBeforeAppointment: { type: Number, default: 24, min: 1, max: 168 },
+    description: {
+      type: String,
+      default: 'Cancellations must be made at least 24 hours before the appointment',
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
 const businessSchema = new mongoose.Schema(
   {
     owner: {
@@ -110,6 +123,10 @@ const businessSchema = new mongoose.Schema(
       type: String,
       enum: paymentModes,
       default: 'both',
+    },
+    cancellationPolicy: {
+      type: cancellationPolicySchema,
+      default: () => ({}),
     },
     images: [{ type: String }],
     isActive: {

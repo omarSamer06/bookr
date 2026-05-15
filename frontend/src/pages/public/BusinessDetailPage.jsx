@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { getEffectiveCancellationPolicy } from '@/lib/bookingUtils'
 import { WEEKDAYS, categoryLabel } from '@/lib/businessConstants'
 import { cn } from '@/lib/utils'
 import { businessQueryKeys, getBusinessById } from '@/services/business.service.js'
@@ -90,6 +91,8 @@ export default function BusinessDetailPage() {
     user?.role === 'owner' &&
     ownerId &&
     String(ownerId) === String(user._id)
+
+  const cancellationPolicy = getEffectiveCancellationPolicy(business)
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
@@ -246,6 +249,30 @@ export default function BusinessDetailPage() {
                   </a>
                 </div>
               ) : null}
+              <Separator />
+              <div className="space-y-2">
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-bookr-muted">
+                  <Clock className="size-3.5 text-indigo-500" aria-hidden />
+                  Cancellation policy
+                </p>
+                {cancellationPolicy.allowed ? (
+                  <>
+                    <Badge className="rounded-full border-0 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                      Free Cancellation
+                    </Badge>
+                    <p className="text-sm leading-relaxed text-bookr-muted">{cancellationPolicy.description}</p>
+                  </>
+                ) : (
+                  <>
+                    <Badge className="rounded-full border-0 bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
+                      No Online Cancellations
+                    </Badge>
+                    <p className="text-sm leading-relaxed text-bookr-muted">
+                      Please contact the business directly to cancel
+                    </p>
+                  </>
+                )}
+              </div>
               <Separator />
               <Link
                 to={`/book/${business._id}`}

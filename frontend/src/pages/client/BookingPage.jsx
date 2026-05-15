@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { closedWeekdayKeys, todayLocalIsoDate } from '@/lib/bookingUtils'
+import { closedWeekdayKeys, getEffectiveCancellationPolicy, todayLocalIsoDate } from '@/lib/bookingUtils'
 import { cn } from '@/lib/utils'
 import useAuth from '@/hooks/useAuth'
 import {
@@ -76,6 +76,11 @@ export default function BookingPage() {
   const activeServices = useMemo(
     () => (business?.services ?? []).filter((s) => s.isActive !== false),
     [business?.services]
+  )
+
+  const cancellationPolicy = useMemo(
+    () => (business ? getEffectiveCancellationPolicy(business) : null),
+    [business]
   )
 
   const disabledDays = useMemo(() => closedWeekdayKeys(business?.workingHours), [business?.workingHours])
@@ -465,6 +470,18 @@ export default function BookingPage() {
                 <div className="rounded-2xl border border-blue-100 bg-blue-50/40 px-4 py-3 text-sm text-blue-800">
                   Payment will be collected at the business.
                 </div>
+              ) : null}
+
+              {cancellationPolicy ? (
+                cancellationPolicy.allowed ? (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+                    ✓ Free cancellation up to {cancellationPolicy.hoursBeforeAppointment} hours before appointment
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-red-100 bg-red-50/60 px-4 py-3 text-sm text-red-800">
+                    ⚠️ This business does not allow cancellations
+                  </div>
+                )
               ) : null}
 
               <div className="grid gap-2">
