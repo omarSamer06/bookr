@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import chatbotRoutes from './routes/chatbot.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
+import reviewRoutes from './routes/review.routes.js';
 import { registerReminderCron } from './jobs/reminder.job.js';
 import { registerFollowUpCron } from './jobs/followup.job.js';
 
@@ -48,6 +49,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/chatbot', chatbotRoutes);
 app.use('/api/v1/recommendations', recommendationRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({

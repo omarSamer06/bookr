@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import AppointmentCard from '@/components/booking/AppointmentCard'
 import RescheduleModal from '@/components/booking/RescheduleModal'
+import ReviewModal from '@/components/reviews/ReviewModal'
 import { buttonVariants } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { parseAppointmentStartUtc } from '@/lib/bookingUtils'
@@ -62,6 +63,7 @@ export default function ClientAppointmentsPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState('all')
   const [rescheduleTarget, setRescheduleTarget] = useState(null)
+  const [reviewTarget, setReviewTarget] = useState(null)
 
   const filters = useMemo(() => {
     if (tab === 'upcoming') return { upcoming: true }
@@ -134,6 +136,7 @@ export default function ClientAppointmentsPage() {
               notificationsHref={`/notifications?appointmentId=${appt._id}`}
               onCancel={() => cancelMutation.mutate(appt._id)}
               onReschedule={() => setRescheduleTarget(appt)}
+              onLeaveReview={() => setReviewTarget(appt)}
             />
           ))}
         </div>
@@ -158,6 +161,7 @@ export default function ClientAppointmentsPage() {
                   notificationsHref={`/notifications?appointmentId=${appt._id}`}
                   onCancel={() => cancelMutation.mutate(appt._id)}
                   onReschedule={() => setRescheduleTarget(appt)}
+                  onLeaveReview={() => setReviewTarget(appt)}
                 />
               ))}
             </div>
@@ -178,6 +182,7 @@ export default function ClientAppointmentsPage() {
                   appointment={appt}
                   viewType="client"
                   notificationsHref={`/notifications?appointmentId=${appt._id}`}
+                  onLeaveReview={() => setReviewTarget(appt)}
                 />
               ))}
             </div>
@@ -245,6 +250,14 @@ export default function ClientAppointmentsPage() {
           if (!open) setRescheduleTarget(null)
         }}
         appointment={rescheduleTarget}
+      />
+
+      <ReviewModal
+        open={Boolean(reviewTarget)}
+        onOpenChange={(open) => {
+          if (!open) setReviewTarget(null)
+        }}
+        appointment={reviewTarget}
       />
     </div>
   )

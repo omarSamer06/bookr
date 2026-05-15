@@ -20,6 +20,7 @@ import BookingPage from '@/pages/client/BookingPage'
 import ClientAppointmentsPage from '@/pages/client/ClientAppointmentsPage'
 import PaymentSuccessPage from '@/pages/client/PaymentSuccessPage'
 import OwnerAppointmentsPage from '@/pages/owner/OwnerAppointmentsPage'
+import OwnerReviewsPage from '@/pages/owner/OwnerReviewsPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import BusinessDetailPage from '@/pages/public/BusinessDetailPage'
 import BusinessListPage from '@/pages/public/BusinessListPage'
@@ -138,6 +139,7 @@ export default function App() {
             >
               <Route index element={<BusinessDashboardPage />} />
               <Route path="appointments" element={<OwnerAppointmentsPage />} />
+              <Route path="reviews" element={<OwnerReviewsPage />} />
               <Route path="setup" element={<BusinessSetupPage />} />
             </Route>
             <Route

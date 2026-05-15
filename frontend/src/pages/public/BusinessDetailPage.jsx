@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Clock, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { ArrowLeft, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
+import BusinessReviewsSection from '@/components/reviews/BusinessReviewsSection'
+import StarRating from '@/components/reviews/StarRating'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -108,6 +110,20 @@ export default function BusinessDetailPage() {
               {categoryLabel(business.category)}
             </Badge>
             <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">{business.name}</h1>
+            {(business.totalReviews ?? 0) > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <StarRating value={business.averageRating ?? 0} size="sm" className="[&_svg]:text-amber-300" />
+                <span className="text-sm font-medium text-indigo-100">
+                  {Number(business.averageRating ?? 0).toFixed(1)} ({business.totalReviews} review
+                  {business.totalReviews === 1 ? '' : 's'})
+                </span>
+              </div>
+            ) : (
+              <p className="mt-2 inline-flex items-center gap-1 text-sm text-indigo-100/90">
+                <Star className="size-4 text-indigo-200" aria-hidden />
+                No reviews yet
+              </p>
+            )}
             {business.owner?.name ? <p className="mt-2 text-sm text-indigo-100">Hosted by {business.owner.name}</p> : null}
           </div>
         </div>
@@ -200,6 +216,12 @@ export default function BusinessDetailPage() {
               ))}
             </div>
           ) : null}
+
+          <BusinessReviewsSection
+            businessId={business._id}
+            averageRating={business.averageRating}
+            totalReviews={business.totalReviews}
+          />
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24">

@@ -85,6 +85,7 @@ export default function AppointmentCard({
   onNoShow,
   onRefund,
   onMarkPaid,
+  onLeaveReview,
   notificationsHref,
 }) {
   const future = isAppointmentFuture(appointment)
@@ -141,6 +142,12 @@ export default function AppointmentCard({
     Boolean(onMarkPaid) &&
     appointment.paymentStatus === 'on_arrival'
 
+  const showLeaveReview =
+    viewType === 'client' &&
+    Boolean(onLeaveReview) &&
+    status === 'completed' &&
+    !appointment.hasReview
+
   const ownerInitial = (appointment.client?.name?.trim?.()?.[0] ?? appointment.client?.email?.[0] ?? '?').toUpperCase()
 
   return (
@@ -192,6 +199,11 @@ export default function AppointmentCard({
           {showClientReschedule ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => onReschedule(appointment)}>
               Reschedule
+            </Button>
+          ) : null}
+          {showLeaveReview ? (
+            <Button type="button" variant="secondary" size="sm" onClick={() => onLeaveReview(appointment)}>
+              Leave review
             </Button>
           ) : null}
           {showOwnerComplete ? (
