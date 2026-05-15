@@ -148,6 +148,12 @@ export default function AppointmentCard({
     status === 'completed' &&
     !appointment.hasReview
 
+  const showReviewSubmitted =
+    viewType === 'client' && status === 'completed' && appointment.hasReview
+
+  const showOwnerReviewIndicator =
+    viewType === 'owner' && status === 'completed' && appointment.hasReview
+
   const ownerInitial = (appointment.client?.name?.trim?.()?.[0] ?? appointment.client?.email?.[0] ?? '?').toUpperCase()
 
   return (
@@ -172,6 +178,16 @@ export default function AppointmentCard({
                 <p className="font-heading text-lg font-bold text-bookr-text">{title}</p>
                 <StatusBadge status={status} />
                 <PaymentStatusBadge paymentStatus={appointment.paymentStatus} />
+                {showReviewSubmitted ? (
+                  <Badge className="rounded-full border-0 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                    Review Submitted
+                  </Badge>
+                ) : null}
+                {showOwnerReviewIndicator ? (
+                  <Badge className="rounded-full border-0 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                    Has review
+                  </Badge>
+                ) : null}
               </div>
               <p className="text-sm text-bookr-muted">{subtitle}</p>
             </div>
@@ -203,7 +219,7 @@ export default function AppointmentCard({
           ) : null}
           {showLeaveReview ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => onLeaveReview(appointment)}>
-              Leave review
+              Leave a Review
             </Button>
           ) : null}
           {showOwnerComplete ? (

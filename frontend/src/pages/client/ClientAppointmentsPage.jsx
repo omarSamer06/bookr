@@ -4,8 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import AppointmentCard from '@/components/booking/AppointmentCard'
 import RescheduleModal from '@/components/booking/RescheduleModal'
-import ReviewModal from '@/components/reviews/ReviewModal'
+import ReviewForm from '@/components/reviews/ReviewForm'
 import { buttonVariants } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { parseAppointmentStartUtc } from '@/lib/bookingUtils'
 import { cn } from '@/lib/utils'
@@ -252,13 +258,36 @@ export default function ClientAppointmentsPage() {
         appointment={rescheduleTarget}
       />
 
-      <ReviewModal
+      <Dialog
         open={Boolean(reviewTarget)}
         onOpenChange={(open) => {
           if (!open) setReviewTarget(null)
         }}
-        appointment={reviewTarget}
-      />
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Leave a review</DialogTitle>
+          </DialogHeader>
+          {reviewTarget ? (
+            <ReviewForm
+              appointmentId={reviewTarget._id}
+              businessName={reviewTarget.business?.name ?? 'this business'}
+              onSuccess={async () => {
+                setReviewTarget(null)
+                await qc.invalidateQueries({ queryKey: ['appointments', 'mine'] })
+                if (reviewTarget.business?._id) {
+                  await qc.invalidateQueries({
+                    queryKey: ['reviews', 'business', reviewTarget.business._id],
+                  })
+                  await qc.invalidateQueries({
+                    queryKey: ['businesses', 'detail', reviewTarget.business._id],
+                  })
+                }
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

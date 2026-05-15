@@ -160,6 +160,7 @@ export const getBusinessReviews = async (req, res) => {
       comment: r.comment,
       createdAt: r.createdAt,
       ownerReply: r.ownerReply,
+      clientId: r.client?._id?.toString?.() ?? String(r.client ?? ''),
       client: {
         name: r.client?.name ?? 'Client',
         avatar: r.client?.avatar ?? '',

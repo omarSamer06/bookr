@@ -414,10 +414,21 @@ export const getBusinessAppointments = async (req, res) => {
       .populate({ path: 'client', select: 'name email phone' })
       .lean();
 
+    const appointmentIds = appointments.map((a) => a._id);
+    const reviewedRows = appointmentIds.length
+      ? await Review.find({ appointment: { $in: appointmentIds } }).select('appointment').lean()
+      : [];
+    const reviewedSet = new Set(reviewedRows.map((r) => String(r.appointment)));
+
+    const withReviewFlags = appointments.map((a) => ({
+      ...a,
+      hasReview: reviewedSet.has(String(a._id)),
+    }));
+
     return res.status(200).json({
       success: true,
       message: 'Business appointments',
-      data: { appointments },
+      data: { appointments: withReviewFlags },
     });
   } catch (err) {
     console.error(err);

@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Clock, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
-import BusinessReviewsSection from '@/components/reviews/BusinessReviewsSection'
-import StarRating from '@/components/reviews/StarRating'
+import { ArrowLeft, Clock, MapPin, MessageCircle, Phone } from 'lucide-react'
+import RatingBadge from '@/components/reviews/RatingBadge'
+import ReviewsList from '@/components/reviews/ReviewsList'
+import useAuth from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,6 +40,7 @@ function DetailSkeleton() {
 export default function BusinessDetailPage() {
   const { id } = useParams()
   const openChat = useChatbotStore((s) => s.openChat)
+  const { user, isAuthenticated } = useAuth()
 
   const {
     data: business,
@@ -82,6 +84,12 @@ export default function BusinessDetailPage() {
   }
 
   const activeServices = (business.services ?? []).filter((s) => s.isActive !== false)
+  const ownerId = business.owner?._id ?? business.owner
+  const isOwner =
+    isAuthenticated &&
+    user?.role === 'owner' &&
+    ownerId &&
+    String(ownerId) === String(user._id)
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
@@ -109,21 +117,17 @@ export default function BusinessDetailPage() {
             <Badge className="rounded-full border-0 bg-white/95 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm">
               {categoryLabel(business.category)}
             </Badge>
-            <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">{business.name}</h1>
-            {(business.totalReviews ?? 0) > 0 ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <StarRating value={business.averageRating ?? 0} size="sm" className="[&_svg]:text-amber-300" />
-                <span className="text-sm font-medium text-indigo-100">
-                  {Number(business.averageRating ?? 0).toFixed(1)} ({business.totalReviews} review
-                  {business.totalReviews === 1 ? '' : 's'})
-                </span>
-              </div>
-            ) : (
-              <p className="mt-2 inline-flex items-center gap-1 text-sm text-indigo-100/90">
-                <Star className="size-4 text-indigo-200" aria-hidden />
-                No reviews yet
-              </p>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                {business.name}
+              </h1>
+              <RatingBadge
+                rating={business.averageRating}
+                totalReviews={business.totalReviews}
+                size="sm"
+                className="rounded-full bg-white/95 px-3 py-1 shadow-sm [&_span]:text-amber-900"
+              />
+            </div>
             {business.owner?.name ? <p className="mt-2 text-sm text-indigo-100">Hosted by {business.owner.name}</p> : null}
           </div>
         </div>
@@ -217,11 +221,7 @@ export default function BusinessDetailPage() {
             </div>
           ) : null}
 
-          <BusinessReviewsSection
-            businessId={business._id}
-            averageRating={business.averageRating}
-            totalReviews={business.totalReviews}
-          />
+          <ReviewsList businessId={business._id} isOwner={isOwner} />
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-24">

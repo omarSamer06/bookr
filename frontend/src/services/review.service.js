@@ -6,22 +6,23 @@ const pickMessage = (err) =>
 export const reviewQueryKeys = {
   business: (businessId, page) => ['reviews', 'business', businessId, page],
   mine: ['reviews', 'mine'],
-  owner: (page) => ['reviews', 'owner', page],
 }
 
-export async function createReview(payload) {
+export async function createReview(data) {
   try {
-    const { data } = await api.post('/reviews', payload)
-    if (!data.success) throw new Error(data.message)
-    return data.data.review
+    const { data: res } = await api.post('/reviews', data)
+    if (!res.success) throw new Error(res.message)
+    return res.data.review
   } catch (err) {
     throw new Error(pickMessage(err), { cause: err })
   }
 }
 
-export async function getBusinessReviews(businessId, { page = 1, limit = 10 } = {}) {
+export async function getBusinessReviews(businessId, page = 1, limit = 10) {
   try {
-    const { data } = await api.get(`/reviews/business/${businessId}`, { params: { page, limit } })
+    const { data } = await api.get(`/reviews/business/${businessId}`, {
+      params: { page, limit },
+    })
     if (!data.success) throw new Error(data.message)
     return data.data
   } catch (err) {
@@ -34,16 +35,6 @@ export async function getMyReviews() {
     const { data } = await api.get('/reviews/my')
     if (!data.success) throw new Error(data.message)
     return data.data.reviews ?? []
-  } catch (err) {
-    throw new Error(pickMessage(err), { cause: err })
-  }
-}
-
-export async function getOwnerBusinessReviews({ page = 1, limit = 20 } = {}) {
-  try {
-    const { data } = await api.get('/reviews/owner', { params: { page, limit } })
-    if (!data.success) throw new Error(data.message)
-    return data.data
   } catch (err) {
     throw new Error(pickMessage(err), { cause: err })
   }

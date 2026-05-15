@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react'
+import { BarChart2, ChevronDown, LogOut, Menu, Star, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import NotificationBell from '@/components/shared/NotificationBell'
 import useAuth from '@/hooks/useAuth'
@@ -42,6 +42,7 @@ function SidebarNav({ onNavigate }) {
 
   const iconMap = {
     BarChart2,
+    Star,
   }
 
   return (

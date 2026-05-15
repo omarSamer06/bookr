@@ -15,6 +15,7 @@ export function getSidebarNav(role) {
     { to: '/dashboard', label: 'Home', emoji: '🏠' },
     { to: '/businesses', label: 'Browse Businesses', emoji: '🔍' },
     { to: '/dashboard/appointments', label: 'My Appointments', emoji: '📅' },
+    { to: '/dashboard/reviews', label: 'My Reviews', icon: 'Star' },
     { to: '/notifications', label: 'Notifications', emoji: '🔔' },
     { to: '/dashboard', label: 'Profile', emoji: '👤' },
   ]
@@ -24,6 +25,7 @@ export function getSidebarNav(role) {
 export function getDashboardPageTitle(pathname) {
   if (pathname === '/dashboard') return 'Home'
   if (pathname === '/dashboard/appointments') return 'My appointments'
+  if (pathname === '/dashboard/reviews') return 'My reviews'
   if (pathname === '/notifications') return 'Notifications'
   if (pathname === '/payment/success') return 'Payment'
   if (pathname.startsWith('/book/')) return 'Book appointment'

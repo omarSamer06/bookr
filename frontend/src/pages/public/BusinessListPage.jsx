@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, MapPin, Search, Star } from 'lucide-react'
+import { Building2, MapPin, Search } from 'lucide-react'
+import RatingBadge from '@/components/reviews/RatingBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -152,16 +153,17 @@ export default function BusinessListPage() {
                 </div>
                 <CardContent className="space-y-3 p-5 pt-5">
                   <h2 className="font-heading text-lg font-bold text-bookr-text group-hover:text-indigo-700">{b.name}</h2>
+                  <RatingBadge
+                    rating={b.averageRating}
+                    totalReviews={b.totalReviews}
+                    size="sm"
+                  />
                   <p className="flex items-center gap-2 text-sm text-bookr-muted">
                     <MapPin className="size-4 shrink-0 text-indigo-400" aria-hidden />
                     {b.location?.city || 'City TBD'}
                     {b.location?.country ? ` · ${b.location.country}` : ''}
                   </p>
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                      <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden />
-                      New on Bookr
-                    </span>
+                  <div className="flex items-center justify-end gap-3 pt-1">
                     <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
                       {(b.services ?? []).filter((s) => s.isActive !== false).length} services
                     </span>

@@ -18,6 +18,7 @@ import BusinessSetupPage from '@/pages/owner/BusinessSetupPage'
 import InsightsDashboardPage from '@/pages/owner/InsightsDashboardPage'
 import BookingPage from '@/pages/client/BookingPage'
 import ClientAppointmentsPage from '@/pages/client/ClientAppointmentsPage'
+import MyReviewsPage from '@/pages/client/MyReviewsPage'
 import PaymentSuccessPage from '@/pages/client/PaymentSuccessPage'
 import OwnerAppointmentsPage from '@/pages/owner/OwnerAppointmentsPage'
 import OwnerReviewsPage from '@/pages/owner/OwnerReviewsPage'
@@ -110,6 +111,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['client']}>
                   <ClientAppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/reviews"
+              element={
+                <ProtectedRoute roles={['client']}>
+                  <MyReviewsPage />
                 </ProtectedRoute>
               }
             />
