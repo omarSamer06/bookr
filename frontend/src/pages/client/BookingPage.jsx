@@ -39,17 +39,6 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('online')
 
-  const stepLabels = useMemo(() => {
-    const row = [
-      { k: 1, label: 'Service' },
-      { k: 2, label: 'Date' },
-      { k: 3, label: 'Time' },
-      { k: 4, label: 'Review' },
-    ]
-    // Step labels are computed later once business + service are loaded
-    return row
-  }, [])
-
   const {
     data: business,
     isLoading,

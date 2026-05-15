@@ -21,6 +21,16 @@ export const useAuthStore = create((set) => ({
     })
   },
 
+  /** Merges profile/avatar updates into the live session without re-fetching */
+  updateUser: (updatedUser) => {
+    set((state) => ({
+      user: updatedUser,
+      token: state.token,
+      isAuthenticated: true,
+      isLoading: false,
+    }))
+  },
+
   logout: () => {
     localStorage.removeItem(AUTH_TOKEN_KEY)
     useBusinessStore.getState().clearBusiness()

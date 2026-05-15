@@ -17,7 +17,7 @@ function BusinessListSkeleton() {
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="aspect-[16/10] animate-pulse bg-gray-100" />
+          <div className="aspect-16/10 animate-pulse bg-gray-100" />
           <div className="space-y-3 p-5">
             <div className="h-5 w-48 max-w-full animate-pulse rounded-lg bg-gray-100" />
             <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100" />
@@ -54,7 +54,7 @@ export default function BusinessListPage() {
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-3xl space-y-3">
         <h1 className="font-heading text-4xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
             Browse businesses
           </span>
         </h1>
@@ -133,11 +133,11 @@ export default function BusinessListPage() {
           {businesses.map((b) => (
             <Link key={b._id} to={`/businesses/${b._id}`} className="group block">
               <Card className="h-full overflow-hidden border-gray-100 transition-all duration-200 hover:border-indigo-100 hover:shadow-md">
-                <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
+                <div className="relative aspect-16/10 overflow-hidden bg-gray-100">
                   {b.images?.[0] ? (
                     <>
                       <img src={b.images[0]} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/70 via-indigo-900/20 to-transparent" />
+                      <div className="absolute inset-0 bg-linear-to-t from-indigo-950/70 via-indigo-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
                         <Badge className="rounded-full border-0 bg-white/95 px-3 py-1 text-xs font-semibold text-indigo-800 shadow-sm backdrop-blur-sm">
                           {categoryLabel(b.category)}

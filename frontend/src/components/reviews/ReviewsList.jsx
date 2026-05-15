@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ReviewCard from '@/components/reviews/ReviewCard'
 import StarRating from '@/components/reviews/StarRating'
 import useAuth from '@/hooks/useAuth'
-import { getBusinessReviews, reviewQueryKeys } from '@/services/review.service.js'
+import { getBusinessReviews } from '@/services/review.service.js'
 
 const PAGE_SIZE = 5
 
@@ -56,7 +56,7 @@ export default function ReviewsList({ businessId, isOwner = false }) {
     staleTime: 30 * 1000,
   })
 
-  const pages = data?.pages ?? []
+  const pages = useMemo(() => data?.pages ?? [], [data?.pages])
   const firstPage = pages[0]
   const allReviews = useMemo(() => pages.flatMap((p) => p.reviews ?? []), [pages])
   const averageRating = firstPage?.averageRating ?? 0

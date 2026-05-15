@@ -23,6 +23,7 @@ import PaymentSuccessPage from '@/pages/client/PaymentSuccessPage'
 import OwnerAppointmentsPage from '@/pages/owner/OwnerAppointmentsPage'
 import OwnerReviewsPage from '@/pages/owner/OwnerReviewsPage'
 import NotificationsPage from '@/pages/NotificationsPage'
+import ProfilePage from '@/pages/ProfilePage'
 import BusinessDetailPage from '@/pages/public/BusinessDetailPage'
 import BusinessListPage from '@/pages/public/BusinessListPage'
 import { AUTH_TOKEN_KEY } from '@/lib/auth-constants'
@@ -135,6 +136,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

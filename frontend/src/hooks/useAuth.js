@@ -10,6 +10,7 @@ export default function useAuth() {
       isAuthenticated: state.isAuthenticated,
       isLoading: state.isLoading,
       setAuth: state.setAuth,
+      updateUser: state.updateUser,
       logout: state.logout,
       initAuth: state.initAuth,
     }))

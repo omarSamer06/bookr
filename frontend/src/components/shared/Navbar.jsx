@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react'
+import UserAvatar from '@/components/profile/UserAvatar'
 import { Button } from '@/components/ui/button'
 import NotificationBell from '@/components/shared/NotificationBell'
 import useAuth from '@/hooks/useAuth'
@@ -44,8 +45,6 @@ export default function Navbar() {
   useDismissOnOutsideAndEscape(userMenuOpen, setUserMenuOpen, userMenuRef)
 
   const role = user?.role
-  const initial = (user?.name?.trim?.()?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
-
   const centerLinks =
     role === 'owner'
       ? [
@@ -91,9 +90,7 @@ export default function Navbar() {
               aria-haspopup="menu"
               onClick={() => setUserMenuOpen((v) => !v)}
             >
-              <span className="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                {initial}
-              </span>
+              <UserAvatar avatar={user?.avatar} name={user?.name ?? user?.email} className="size-8 text-xs" />
               <span className="max-w-[140px] truncate text-sm text-muted-foreground">{user?.name ?? user?.email}</span>
               <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
             </Button>
@@ -105,7 +102,7 @@ export default function Navbar() {
               >
                 <Link
                   role="menuitem"
-                  to="/dashboard"
+                  to="/dashboard/profile"
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
                   onClick={() => setUserMenuOpen(false)}
                 >
@@ -151,7 +148,7 @@ export default function Navbar() {
                 {l.label}
               </NavLink>
             ))}
-            <NavLink to="/dashboard" className={navLinkClass} onClick={() => setMobileOpen(false)}>
+            <NavLink to="/dashboard/profile" className={navLinkClass} onClick={() => setMobileOpen(false)}>
               Profile
             </NavLink>
             <button

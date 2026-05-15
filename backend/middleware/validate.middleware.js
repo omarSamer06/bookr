@@ -31,6 +31,12 @@ export const validateLogin = [
   handleValidationErrors,
 ];
 
+export const validateUpdateProfile = [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('phone').optional().trim(),
+  handleValidationErrors,
+];
+
 export const validateUpdatePassword = [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword')

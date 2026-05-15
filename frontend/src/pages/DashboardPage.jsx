@@ -6,7 +6,6 @@ import {
   BarChart2,
   Bell,
   Bot,
-  Building2,
   CalendarDays,
   CheckCircle2,
   CreditCard,
@@ -255,7 +254,10 @@ export default function DashboardPage() {
     totalUniqueClients: 0,
   }
 
-  const clientAllAppointments = myAppointmentsQuery.data ?? []
+  const clientAllAppointments = useMemo(
+    () => myAppointmentsQuery.data ?? [],
+    [myAppointmentsQuery.data]
+  )
   const clientUpcomingConfirmed = (upcomingConfirmedQuery.data ?? [])
     .filter(isConfirmedUpcoming)
     .sort((a, b) => (isoTimeKey(a) > isoTimeKey(b) ? 1 : -1))

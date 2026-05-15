@@ -8,7 +8,7 @@ export function getSidebarNav(role) {
       { to: '/dashboard/business/reviews', label: 'Reviews', emoji: '⭐' },
       { to: '/dashboard/insights', label: 'Insights', icon: 'BarChart2' },
       { to: '/notifications', label: 'Notifications', emoji: '🔔' },
-      { to: '/dashboard', label: 'Profile', emoji: '👤' },
+      { to: '/dashboard/profile', label: 'Profile', emoji: '👤' },
     ]
   }
   return [
@@ -17,13 +17,14 @@ export function getSidebarNav(role) {
     { to: '/dashboard/appointments', label: 'My Appointments', emoji: '📅' },
     { to: '/dashboard/reviews', label: 'My Reviews', icon: 'Star' },
     { to: '/notifications', label: 'Notifications', emoji: '🔔' },
-    { to: '/dashboard', label: 'Profile', emoji: '👤' },
+    { to: '/dashboard/profile', label: 'Profile', emoji: '👤' },
   ]
 }
 
 /** Maps authenticated routes to header titles without coupling pages to context */
 export function getDashboardPageTitle(pathname) {
   if (pathname === '/dashboard') return 'Home'
+  if (pathname === '/dashboard/profile') return 'Profile'
   if (pathname === '/dashboard/appointments') return 'My appointments'
   if (pathname === '/dashboard/reviews') return 'My reviews'
   if (pathname === '/notifications') return 'Notifications'

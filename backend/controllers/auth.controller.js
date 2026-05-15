@@ -1,11 +1,20 @@
 import User from '../models/User.js';
 import { generateToken } from '../services/token.service.js';
+import {
+  uploadImage,
+  deleteImage as destroyCloudinaryImage,
+  extractPublicIdFromUrl,
+} from '../services/cloudinary.service.js';
 
 const sanitizeUser = (userDoc) => {
   const obj = userDoc.toJSON ? userDoc.toJSON() : { ...userDoc };
+  obj.hasPassword = Boolean(userDoc.password);
   delete obj.password;
   return obj;
 };
+
+const isCloudinaryAvatarUrl = (url) =>
+  typeof url === 'string' && url.includes('res.cloudinary.com') && url.includes('/upload/');
 
 export const register = async (req, res) => {
   try {
@@ -141,11 +150,12 @@ export const googleCallback = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
+    const user = await User.findById(req.user._id).select('+password');
     return res.status(200).json({
       success: true,
       message: 'Current user',
       data: {
-        user: sanitizeUser(req.user),
+        user: sanitizeUser(user),
       },
     });
   } catch (err) {
@@ -153,6 +163,91 @@ export const getMe = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Could not load profile',
+      data: {},
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed) {
+        return res.status(400).json({
+          success: false,
+          message: 'Name is required',
+          data: {},
+        });
+      }
+      req.user.name = trimmed;
+    }
+
+    if (phone !== undefined) {
+      req.user.phone = String(phone).trim();
+    }
+
+    await req.user.save();
+
+    const fresh = await User.findById(req.user._id).select('+password');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        user: sanitizeUser(fresh),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not update profile',
+      data: {},
+    });
+  }
+};
+
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file uploaded',
+        data: {},
+      });
+    }
+
+    const previousAvatar = req.user.avatar;
+    const avatarUrl = await uploadImage(req.file.path, 'bookr/avatars');
+
+    if (previousAvatar && isCloudinaryAvatarUrl(previousAvatar)) {
+      try {
+        const publicId = extractPublicIdFromUrl(previousAvatar);
+        await destroyCloudinaryImage(publicId);
+      } catch {
+        // Non-fatal: new avatar is already stored
+      }
+    }
+
+    req.user.avatar = avatarUrl;
+    await req.user.save();
+
+    const fresh = await User.findById(req.user._id).select('+password');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Avatar updated successfully',
+      data: {
+        user: sanitizeUser(fresh),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not update avatar',
       data: {},
     });
   }

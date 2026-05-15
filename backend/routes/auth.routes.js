@@ -5,12 +5,16 @@ import {
   login,
   googleCallback,
   getMe,
+  updateProfile,
+  updateAvatar,
   updatePassword,
 } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
+import { uploadSingle, wrapMulter } from '../middleware/upload.middleware.js';
 import {
   validateRegister,
   validateLogin,
+  validateUpdateProfile,
   validateUpdatePassword,
 } from '../middleware/validate.middleware.js';
 
@@ -56,6 +60,8 @@ router.get(
 );
 
 router.get('/me', protect, getMe);
+router.patch('/profile', protect, validateUpdateProfile, updateProfile);
+router.patch('/avatar', protect, wrapMulter(uploadSingle), updateAvatar);
 router.patch('/update-password', protect, validateUpdatePassword, updatePassword);
 
 export default router;

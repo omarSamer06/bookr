@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BarChart2, ChevronDown, LogOut, Menu, Star, UserRound, X } from 'lucide-react'
+import UserAvatar from '@/components/profile/UserAvatar'
 import { Button } from '@/components/ui/button'
 import NotificationBell from '@/components/shared/NotificationBell'
 import useAuth from '@/hooks/useAuth'
@@ -48,8 +49,7 @@ function SidebarNav({ onNavigate }) {
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Sidebar">
       {nav.map((item) => {
-        const isDashLink = item.to === '/dashboard' && (item.label === 'Home' || item.label === 'Profile')
-        if (isDashLink) {
+        if (item.label === 'Home') {
           return (
             <Link
               key={`${item.to}-${item.label}`}
@@ -62,6 +62,22 @@ function SidebarNav({ onNavigate }) {
               </span>
               {item.label}
             </Link>
+          )
+        }
+
+        if (item.label === 'Profile') {
+          return (
+            <NavLink
+              key={`${item.to}-${item.label}`}
+              to="/dashboard/profile"
+              onClick={onNavigate}
+              className={sidebarLinkClass}
+            >
+              <span className="text-base" aria-hidden>
+                {item.emoji}
+              </span>
+              {item.label}
+            </NavLink>
           )
         }
 
@@ -93,8 +109,6 @@ export default function DashboardShell() {
   useDismissOnOutsideAndEscape(userMenuOpen, setUserMenuOpen, userMenuRef)
 
   const title = getDashboardPageTitle(location.pathname)
-  const initial = (user?.name?.trim?.()?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()
-
   const onLogout = () => {
     setUserMenuOpen(false)
     setDrawerOpen(false)
@@ -183,9 +197,7 @@ export default function DashboardShell() {
                 aria-haspopup="menu"
                 onClick={() => setUserMenuOpen((v) => !v)}
               >
-                <span className="flex size-9 items-center justify-center rounded-full bg-linear-to-br from-indigo-100 to-purple-100 text-xs font-semibold text-indigo-700">
-                  {initial}
-                </span>
+                <UserAvatar avatar={user?.avatar} name={user?.name ?? user?.email} className="size-9 text-xs" />
                 <span className="hidden max-w-[140px] truncate text-sm text-bookr-muted sm:inline">{user?.name ?? user?.email}</span>
                 <ChevronDown className="size-4 text-bookr-muted" aria-hidden />
               </Button>
@@ -196,7 +208,7 @@ export default function DashboardShell() {
                 >
                   <Link
                     role="menuitem"
-                    to="/dashboard"
+                    to="/dashboard/profile"
                     className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-indigo-50"
                     onClick={() => setUserMenuOpen(false)}
                   >
