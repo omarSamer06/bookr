@@ -1,8 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
+  ArrowRight,
   BarChart2,
   Bell,
   Bot,
@@ -10,8 +11,10 @@ import {
   CheckCircle2,
   CreditCard,
   DollarSign,
-  LogOut,
+  Search,
   Sparkles,
+  Star,
+  Store,
   TrendingUp,
   Users,
 } from 'lucide-react'
@@ -95,12 +98,104 @@ function GradientIcon({ icon: Icon, tone = 'indigo' }) {
   )
 }
 
-function StatMini({ label, value }) {
+function FeatureIcon({ icon: Icon }) {
   return (
-    <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15">
-      <p className="text-xs font-semibold tracking-wide text-white/80 uppercase">{label}</p>
-      <p className="mt-1 font-heading text-2xl font-bold text-white">{value}</p>
+    <span className="flex items-center justify-center rounded-xl bg-[#7C3AED] p-3 text-white">
+      <Icon className="size-5" aria-hidden />
+    </span>
+  )
+}
+
+function getTimeGreeting() {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) return 'Good morning'
+  if (hour >= 12 && hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function getFirstName(name) {
+  const trimmed = String(name ?? '').trim()
+  if (!trimmed) return 'there'
+  return trimmed.split(/\s+/)[0]
+}
+
+function OwnerStatPill({ icon: Icon, value, label, isLoading }) {
+  if (isLoading) {
+    return (
+      <div
+        className="flex items-center gap-2 rounded-full border border-[#DDD6FE] bg-white px-4 py-1.5 shadow-[0_1px_3px_rgba(124,58,237,0.08)]"
+        aria-hidden
+      >
+        <div className="size-3.5 shrink-0 animate-pulse rounded-full bg-[#EDE9FE]" />
+        <div className="h-4 w-20 animate-pulse rounded bg-[#EDE9FE]" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-full border border-[#DDD6FE] bg-white px-4 py-1.5 shadow-[0_1px_3px_rgba(124,58,237,0.08)]">
+      <Icon className="size-3.5 shrink-0 text-[#7C3AED]" aria-hidden />
+      <span className="text-sm font-bold text-[#0F0A1E]">{value}</span>
+      <span className="text-xs text-[#6B7280]">{label}</span>
     </div>
+  )
+}
+
+function ClientHeroStat({ label, value, sublabel }) {
+  return (
+    <div className="rounded-2xl border border-white/20 bg-white/12 px-6 py-4 text-center backdrop-blur-[10px]">
+      <p className="mb-1 text-xs font-semibold tracking-widest text-white/60 uppercase">{label}</p>
+      <p className="text-4xl leading-none font-extrabold text-white">{value}</p>
+      <p className="mt-1 text-xs text-white/50">{sublabel}</p>
+    </div>
+  )
+}
+
+function ClientSectionHeader({ title, to, linkLabel = 'View all →' }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-xl font-bold text-[#0F0A1E]">{title}</h2>
+      {to ? (
+        <Link to={to} className="text-sm font-semibold text-[#7C3AED] hover:text-[#6D28D9]">
+          {linkLabel}
+        </Link>
+      ) : null}
+    </div>
+  )
+}
+
+function ClientEmptyBanner({ icon: Icon, title, description, to, linkLabel }) {
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-[#DDD6FE] bg-[#F5F3FF] px-6 py-5 sm:flex-row sm:items-center">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
+        <Icon className="size-6 text-[#7C3AED]" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-[#0F0A1E]">{title}</p>
+        <p className="mt-0.5 text-sm text-[#6B7280]">{description}</p>
+      </div>
+      <Link to={to} className="shrink-0 text-sm font-semibold text-[#7C3AED] hover:text-[#6D28D9]">
+        {linkLabel}
+      </Link>
+    </div>
+  )
+}
+
+function ClientQuickAction({ to, icon: Icon, title, description }) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#7C3AED]/30 hover:shadow-md"
+    >
+      <span className="flex shrink-0 items-center justify-center rounded-xl bg-[#7C3AED] p-2.5 text-white">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-[#0F0A1E]">{title}</p>
+        <p className="mt-0.5 text-sm text-[#6B7280]">{description}</p>
+      </div>
+      <ArrowRight className="size-5 shrink-0 text-[#9CA3AF] transition-colors group-hover:text-[#7C3AED]" aria-hidden />
+    </Link>
   )
 }
 
@@ -167,17 +262,13 @@ function BusinessThumb({ business, idx }) {
   )
 }
 
-export default function DashboardPage() {
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const { user, logout } = useAuth()
-  const openChat = useChatbotStore((s) => s.openChat)
+const heroPrimaryBtn =
+  'inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[#7C3AED] hover:bg-white/90'
 
-  const handleLogout = () => {
-    logout()
-    toast.success('Signed out')
-    navigate('/login', { replace: true })
-  }
+export default function DashboardPage() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  const openChat = useChatbotStore((s) => s.openChat)
 
   const isClient = user?.role === 'client'
   const isOwner = user?.role === 'owner'
@@ -301,10 +392,130 @@ export default function DashboardPage() {
     recentBusinessesDetailsQuery.data?.filter(Boolean) ?? recentBusinesses
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      {/* Welcome hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 p-7 text-white shadow-lg sm:p-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_45%)]" />
+    <div
+      className={cn(
+        'mx-auto max-w-7xl',
+        isClient
+          ? 'space-y-6 bg-[#FAFAFA] -mx-4 -mt-4 min-h-full px-4 pt-4 pb-6 sm:-mx-6 sm:px-6'
+          : isOwner
+            ? 'space-y-6'
+            : 'space-y-8'
+      )}
+    >
+      {isClient ? (
+        <section
+          className="relative min-h-[200px] overflow-hidden rounded-3xl bg-[#7C3AED] px-6 py-10 text-white sm:px-12 sm:py-10"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse at top right, rgba(167,139,250,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom left, rgba(109,40,217,0.6) 0%, transparent 50%)',
+          }}
+        >
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-white/60" aria-hidden />
+                <p className="text-sm text-white/60">Welcome back</p>
+              </div>
+              <h1 className="mt-1 text-[2.5rem] leading-tight font-extrabold tracking-[-0.02em] text-white">
+                {user?.name ?? 'Bookr member'}
+              </h1>
+              <p className="mt-2 text-sm text-white/60">Ready to book your next appointment?</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  to="/businesses"
+                  className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-[#7C3AED] shadow-md transition-all hover:bg-white/90"
+                >
+                  Book Now
+                </Link>
+                <Link
+                  to="/dashboard/appointments"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/15 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-white/25"
+                >
+                  My Appointments
+                </Link>
+              </div>
+            </div>
+            <div className="flex justify-center lg:justify-end">
+              <div className="grid w-full max-w-sm grid-cols-2 gap-3 sm:max-w-none">
+                <ClientHeroStat
+                  label="Total Bookings"
+                  value={myAppointmentsQuery.isLoading ? '—' : String(clientAllAppointments.length)}
+                  sublabel="total"
+                />
+                <ClientHeroStat
+                  label="Upcoming"
+                  value={upcomingConfirmedQuery.isLoading ? '—' : String(clientUpcomingConfirmed.length)}
+                  sublabel="confirmed"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : isOwner ? (
+        <header className="relative -mx-4 -mt-4 overflow-hidden rounded-b-[20px] border-b border-[#DDD6FE] bg-[linear-gradient(135deg,#F5F3FF_0%,#EDE9FE_100%)] px-8 py-6 sm:-mx-6">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 bottom-0 left-0 w-1 rounded-r bg-[#7C3AED]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-10 -right-10 size-[180px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.08)_0%,transparent_70%)]"
+          />
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 pl-2">
+              <h1 className="font-heading text-2xl font-bold text-[#0F0A1E]">
+                {getTimeGreeting()}, {getFirstName(user?.name)}
+              </h1>
+              <p className="mt-0.5 text-sm font-medium text-[#7C3AED]">
+                Managing {myBusinessQuery.data?.name ?? 'your business'}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="hidden flex-wrap items-center gap-3 md:flex">
+              <OwnerStatPill
+                icon={CalendarDays}
+                value={String(overview.totalAppointments ?? 0)}
+                label="Appointments"
+                isLoading={overviewQuery.isLoading}
+              />
+              <OwnerStatPill
+                icon={DollarSign}
+                value={formatCurrency(overview.totalRevenue ?? 0)}
+                label="Revenue"
+                isLoading={overviewQuery.isLoading}
+              />
+              <OwnerStatPill
+                icon={Users}
+                value={String(overview.totalUniqueClients ?? 0)}
+                label="Clients"
+                isLoading={overviewQuery.isLoading}
+              />
+            </div>
+
+            <div className="mx-1 hidden h-6 w-px bg-[#DDD6FE] md:block" aria-hidden />
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <Link
+                to={myBusinessQuery.data ? '/dashboard/business' : '/dashboard/business/setup'}
+                className="inline-flex items-center justify-center rounded-xl border border-[#7C3AED]/30 bg-white px-4 py-2 text-sm font-semibold text-[#7C3AED] shadow-sm transition-all hover:border-[#7C3AED] hover:shadow-md"
+              >
+                My Business
+              </Link>
+              <Link
+                to="/dashboard/business/appointments"
+                className="inline-flex items-center justify-center rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#6D28D9] hover:shadow-md"
+              >
+                View Appointments
+              </Link>
+            </div>
+          </div>
+          </div>
+        </header>
+      ) : (
+      <section className="relative overflow-hidden rounded-3xl bg-[#7C3AED] p-7 text-white shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1),inset_0_0_120px_rgba(0,0,0,0.15)] sm:p-10">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.08)_0%,transparent_60%)]" />
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">
@@ -313,96 +524,42 @@ export default function DashboardPage() {
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-indigo-100">Welcome back</p>
-                <Badge className="rounded-full border-0 bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
+                <p className="text-sm font-medium text-white/75">Welcome back</p>
+                <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-medium text-white">
                   {roleLabels[user?.role] ?? user?.role ?? 'Member'}
-                </Badge>
+                </span>
               </div>
-              <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight sm:text-4xl">{user?.name ?? 'Bookr member'}</h1>
-
-              {isOwner && myBusinessQuery.data?.name ? (
-                <p className="mt-2 text-sm text-indigo-100">
-                  Managing <span className="font-semibold text-white">{myBusinessQuery.data.name}</span>
-                </p>
-              ) : (
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-indigo-100">
-                  Your dashboard brings appointments, insights, and smart booking into one place.
-                </p>
-              )}
+              <h1 className="mt-2 font-heading text-3xl font-bold text-white">{user?.name ?? 'Bookr member'}</h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/65">
+                Your dashboard brings appointments, insights, and smart booking into one place.
+              </p>
             </div>
           </div>
-
-          {isClient ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <StatMini label="Total Bookings" value={myAppointmentsQuery.isLoading ? '—' : String(clientAllAppointments.length)} />
-              <StatMini label="Upcoming" value={upcomingConfirmedQuery.isLoading ? '—' : String(clientUpcomingConfirmed.length)} />
-            </div>
-          ) : isOwner ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <StatMini
-                label="Total Appointments"
-                value={overviewQuery.isLoading ? '—' : String(overview.totalAppointments ?? 0)}
-              />
-              <StatMini
-                label="Total Revenue"
-                value={overviewQuery.isLoading ? '—' : formatCurrency(overview.totalRevenue ?? 0)}
-              />
-            </div>
-          ) : null}
         </div>
 
         <div className="relative mt-6 flex flex-wrap gap-2">
-          {isClient ? (
-            <>
-              <Link to="/businesses" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-indigo-700 hover:bg-white/90')}>
-                Book Now
-              </Link>
-              <Link
-                to="/dashboard/appointments"
-                className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-white/25 bg-white/10 text-white hover:bg-white/15')}
-              >
-                My Appointments
-              </Link>
-            </>
-          ) : isOwner ? (
-            myBusinessQuery.data ? (
-              <>
-                <Link to="/dashboard/business" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-indigo-700 hover:bg-white/90')}>
-                  My Business
-                </Link>
-                <Link
-                  to="/dashboard/business/appointments"
-                  className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-white/25 bg-white/10 text-white hover:bg-white/15')}
-                >
-                  View Appointments
-                </Link>
-              </>
-            ) : (
-              <Link to="/dashboard/business/setup" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-indigo-700 hover:bg-white/90')}>
-                Set Up Your Business
-              </Link>
-            )
-          ) : (
-            <Link to="/businesses" className={cn(buttonVariants({ size: 'lg' }), 'bg-white text-indigo-700 hover:bg-white/90')}>
-              Browse businesses
-            </Link>
-          )}
+          <Link to="/businesses" className={heroPrimaryBtn}>
+            Browse businesses
+          </Link>
         </div>
       </section>
+      )}
 
-      {/* Client dashboard */}
       {isClient ? (
         <>
-          <section className="space-y-4">
-            <SectionHeader
-              title="Upcoming appointments"
-              subtitle="Your next confirmed visits."
-              right={
-                <Link to="/dashboard/appointments" className="font-semibold text-indigo-700 hover:underline underline-offset-4">
-                  View All
-                </Link>
-              }
+          <section className="grid gap-4 md:grid-cols-3">
+            <ClientQuickAction to="/businesses" icon={Search} title="Find a Business" description="Browse all services" />
+            <ClientQuickAction
+              to="/dashboard/appointments"
+              icon={CalendarDays}
+              title="My Schedule"
+              description="View upcoming visits"
             />
+            <ClientQuickAction to="/dashboard/reviews" icon={Star} title="My Reviews" description="See your feedback" />
+          </section>
+
+          <section className="space-y-4">
+            <ClientSectionHeader title="Upcoming" to="/dashboard/appointments" />
 
             {upcomingConfirmedQuery.isLoading ? (
               <div className="grid gap-4">
@@ -411,13 +568,13 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : !nextThreeUpcoming.length ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-14 text-center shadow-sm">
-                <p className="font-heading text-lg font-bold text-bookr-text">No upcoming appointments</p>
-                <p className="mt-2 text-sm text-bookr-muted">Book your first one and get confirmed instantly.</p>
-                <Link to="/businesses" className={cn(buttonVariants({ size: 'lg' }), 'mt-6')}>
-                  Book Now
-                </Link>
-              </div>
+              <ClientEmptyBanner
+                icon={CalendarDays}
+                title="No upcoming appointments"
+                description="Book a service to get started"
+                to="/businesses"
+                linkLabel="Book Now →"
+              />
             ) : (
               <div className="grid gap-4">
                 {nextThreeUpcoming.map((appt) => (
@@ -428,7 +585,7 @@ export default function DashboardPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionHeader title="Recently visited" subtitle="Pick up where you left off." />
+            <ClientSectionHeader title="Recently Visited Businesses" to="/businesses" linkLabel="Browse →" />
 
             {myAppointmentsQuery.isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -437,13 +594,13 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : !recentBusinesses.length ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-14 text-center shadow-sm">
-                <p className="font-heading text-lg font-bold text-bookr-text">Browse businesses to get started</p>
-                <p className="mt-2 text-sm text-bookr-muted">Discover local pros, then rebook in seconds.</p>
-                <Link to="/businesses" className={cn(buttonVariants({ size: 'lg' }), 'mt-6')}>
-                  Browse
-                </Link>
-              </div>
+              <ClientEmptyBanner
+                icon={Store}
+                title="No recent businesses"
+                description="Browse businesses to get started"
+                to="/businesses"
+                linkLabel="Browse →"
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recentBusinessesEnriched.map((biz, idx) => (
@@ -471,71 +628,65 @@ export default function DashboardPage() {
           </section>
 
           <section className="space-y-4">
-            <SectionHeader title="Why Bookr feels effortless" subtitle="Built for speed, clarity, and confidence." />
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                {
-                  title: 'Smart Booking',
-                  desc: 'AI-powered slot recommendations based on your preferences.',
-                  icon: Sparkles,
-                  tone: 'indigo',
-                },
-                {
-                  title: 'Instant Confirmation',
-                  desc: 'Get confirmed instantly with automated notifications.',
-                  icon: CheckCircle2,
-                  tone: 'emerald',
-                },
-                {
-                  title: 'Secure Payments',
-                  desc: 'Pay securely online with Stripe or pay on arrival.',
-                  icon: CreditCard,
-                  tone: 'violet',
-                },
-              ].map((f) => (
-                <Card key={f.title} className="border-gray-100 bg-white shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-base">
-                      <GradientIcon icon={f.icon} tone={f.tone} />
-                      {f.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm">{f.desc}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
+            <h2 className="text-xl font-bold text-[#0F0A1E]">Why Bookr feels effortless</h2>
+            <div className="rounded-2xl border border-[#DDD6FE] bg-[#F5F3FF] p-8">
+              <div className="grid gap-8 md:grid-cols-3 md:gap-0">
+                {[
+                  {
+                    title: 'Smart Booking',
+                    desc: 'AI-powered slot recommendations based on your preferences.',
+                    icon: Sparkles,
+                  },
+                  {
+                    title: 'Instant Confirmation',
+                    desc: 'Get confirmed instantly with automated notifications.',
+                    icon: CheckCircle2,
+                  },
+                  {
+                    title: 'Secure Payments',
+                    desc: 'Pay securely online with Stripe or pay on arrival.',
+                    icon: CreditCard,
+                  },
+                ].map((f, idx) => (
+                  <div
+                    key={f.title}
+                    className={cn(
+                      'md:px-8',
+                      idx > 0 && 'border-t border-[#DDD6FE] pt-8 md:border-t-0 md:border-l md:pt-0'
+                    )}
+                  >
+                    <FeatureIcon icon={f.icon} />
+                    <p className="mt-3 font-bold text-[#0F0A1E]">{f.title}</p>
+                    <p className="mt-1 text-sm text-[#6B7280]">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-linear-to-r from-indigo-50 via-violet-50 to-purple-50 p-6 shadow-sm sm:p-8">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.22),transparent_45%)]" />
-            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-2">
-                <p className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700">
-                  <Bot className="size-4" aria-hidden />
-                  Meet your AI Booking Assistant
-                </p>
-                <p className="font-heading text-2xl font-bold tracking-tight text-bookr-text">Ask anything about businesses, services, or availability.</p>
-                <p className="text-sm text-bookr-muted">Get answers fast, then book with confidence.</p>
+          <section className="rounded-3xl bg-[#7C3AED] px-8 py-8 sm:px-10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Bot className="size-4 text-white/60" aria-hidden />
+                  <p className="text-xs font-semibold tracking-widest text-white/60 uppercase">AI Powered</p>
+                </div>
+                <h2 className="mt-2 text-2xl font-bold text-white">Meet your Booking Assistant</h2>
+                <p className="mt-1 text-sm text-white/60">Ask anything — services, availability, or pricing</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="lg"
-                  className="gap-2"
-                  onClick={async () => {
-                    try {
-                      await openChat(null, { openWindow: true })
-                    } catch {
-                      toast.error('Could not open the assistant right now.')
-                    }
-                  }}
-                >
-                  Try it now
-                </Button>
-                <Link to="/businesses" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'border-indigo-200')}>
-                  Browse businesses
-                </Link>
-              </div>
+              <Button
+                type="button"
+                className="shrink-0 rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-[#7C3AED] shadow-md hover:bg-white/90"
+                onClick={async () => {
+                  try {
+                    await openChat(null, { openWindow: true })
+                  } catch {
+                    toast.error('Could not open the assistant right now.')
+                  }
+                }}
+              >
+                Try it now
+              </Button>
             </div>
           </section>
         </>
@@ -704,25 +855,22 @@ export default function DashboardPage() {
                     title: 'AI Insights',
                     desc: 'Get AI-powered analytics and business performance summaries.',
                     icon: BarChart2,
-                    tone: 'indigo',
                   },
                   {
                     title: 'Smart Notifications',
                     desc: 'Automated personalized emails and SMS for every appointment.',
                     icon: Bell,
-                    tone: 'violet',
                   },
                   {
                     title: 'Flexible Payments',
                     desc: 'Accept online payments or cash on arrival — your choice.',
                     icon: CreditCard,
-                    tone: 'emerald',
                   },
                 ].map((f) => (
                   <Card key={f.title} className="border-gray-100 bg-white shadow-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-base">
-                        <GradientIcon icon={f.icon} tone={f.tone} />
+                        <FeatureIcon icon={f.icon} />
                         {f.title}
                       </CardTitle>
                       <CardDescription className="text-sm">{f.desc}</CardDescription>
@@ -735,33 +883,6 @@ export default function DashboardPage() {
         </>
       ) : null}
 
-      {/* Session */}
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Session</CardTitle>
-          <CardDescription>Sign out on shared devices when you’re finished.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/notifications"
-              className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'justify-center border-gray-200')}
-            >
-              Notifications
-            </Link>
-            <Link
-              to="/businesses"
-              className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'justify-center border-indigo-200 text-indigo-700 hover:bg-indigo-50')}
-            >
-              Browse
-            </Link>
-          </div>
-          <Button type="button" variant="outline" className="gap-2 border-gray-200" onClick={handleLogout}>
-            <LogOut className="size-4" aria-hidden />
-            Log out
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -30,14 +30,14 @@ const steps = [
 export default function LandingPage() {
   return (
     <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute -top-24 right-0 h-96 w-96 rounded-full bg-gradient-to-br from-indigo-400/30 via-violet-400/25 to-purple-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 right-0 h-96 w-96 rounded-full bg-linear-to-br from-indigo-400/30 via-violet-400/25 to-purple-500/20 blur-3xl" />
       <div className="pointer-events-none absolute top-40 -left-24 h-72 w-72 rounded-full bg-indigo-300/20 blur-3xl" />
 
       <section className="relative mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">Bookr</p>
           <h1 className="mt-4 font-heading text-4xl font-bold tracking-tight text-bookr-text sm:text-5xl lg:text-6xl">
-            <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
               Book Smarter, Not Harder
             </span>
           </h1>
@@ -50,7 +50,7 @@ export default function LandingPage() {
               to="/register"
               className={cn(
                 buttonVariants({ size: 'lg' }),
-                'min-w-[180px] justify-center bg-gradient-to-r from-indigo-500 to-purple-600 px-8 text-white shadow-sm hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-700'
+                'min-w-[180px] justify-center bg-linear-to-r from-indigo-500 to-purple-600 px-8 text-white shadow-sm hover:scale-[1.02] hover:from-indigo-600 hover:to-purple-700'
               )}
             >
               Get started
@@ -78,7 +78,7 @@ export default function LandingPage() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="rounded-2xl border border-gray-100 bg-gradient-to-br from-indigo-50/80 to-purple-50/60 p-6 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
+                className="rounded-2xl border border-gray-100 bg-linear-to-br from-indigo-50/80 to-purple-50/60 p-6 shadow-sm transition-all duration-200 hover:border-indigo-100 hover:shadow-md"
               >
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-indigo-100">
                   <f.icon className="size-6 text-indigo-600" aria-hidden />
@@ -113,7 +113,7 @@ export default function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-8 py-14 text-center shadow-lg sm:px-12">
+        <div className="overflow-hidden rounded-3xl bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600 px-8 py-14 text-center shadow-lg sm:px-12">
           <h2 className="font-heading text-3xl font-bold tracking-tight text-white">Ready to get started?</h2>
           <p className="mx-auto mt-3 max-w-xl text-indigo-100">
             Create a free account in minutes — clients book faster, owners keep schedules under control.

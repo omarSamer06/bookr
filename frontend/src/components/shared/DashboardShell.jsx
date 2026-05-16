@@ -1,6 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart2, ChevronDown, LogOut, Menu, Star, UserRound, X } from 'lucide-react'
+import {
+  BarChart2,
+  Bell,
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Search,
+  Star,
+  UserCircle,
+  UserRound,
+  X,
+} from 'lucide-react'
 import UserAvatar from '@/components/profile/UserAvatar'
 import { Button } from '@/components/ui/button'
 import NotificationBell from '@/components/shared/NotificationBell'
@@ -35,16 +50,29 @@ function sidebarLinkClass({ isActive }) {
   )
 }
 
+const sidebarIconMap = {
+  LayoutDashboard,
+  Search,
+  CalendarDays,
+  Star,
+  Bell,
+  UserCircle,
+  Building2,
+  CalendarCheck,
+  BarChart2,
+}
+
+function SidebarNavIcon({ name }) {
+  const Icon = sidebarIconMap[name]
+  if (!Icon) return null
+  return <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
+}
+
 function SidebarNav({ onNavigate }) {
   const { user } = useAuth()
   const loc = useLocation()
   const nav = getSidebarNav(user?.role)
   const dashActive = loc.pathname === '/dashboard'
-
-  const iconMap = {
-    BarChart2,
-    Star,
-  }
 
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Sidebar">
@@ -57,9 +85,7 @@ function SidebarNav({ onNavigate }) {
               onClick={onNavigate}
               className={sidebarLinkClass({ isActive: dashActive })}
             >
-              <span className="text-base" aria-hidden>
-                {item.emoji}
-              </span>
+              <SidebarNavIcon name={item.icon} />
               {item.label}
             </Link>
           )
@@ -73,23 +99,15 @@ function SidebarNav({ onNavigate }) {
               onClick={onNavigate}
               className={sidebarLinkClass}
             >
-              <span className="text-base" aria-hidden>
-                {item.emoji}
-              </span>
+              <SidebarNavIcon name={item.icon} />
               {item.label}
             </NavLink>
           )
         }
 
-        const Icon = item.icon ? iconMap[item.icon] : null
         return (
           <NavLink key={`${item.to}-${item.label}`} to={item.to} onClick={onNavigate} className={sidebarLinkClass}>
-            {Icon ? <Icon className="size-4 text-indigo-700" aria-hidden /> : null}
-            {!Icon ? (
-              <span className="text-base" aria-hidden>
-                {item.emoji}
-              </span>
-            ) : null}
+            <SidebarNavIcon name={item.icon} />
             {item.label}
           </NavLink>
         )

@@ -2,22 +2,22 @@
 export function getSidebarNav(role) {
   if (role === 'owner') {
     return [
-      { to: '/dashboard', label: 'Home', emoji: '🏠' },
-      { to: '/dashboard/business', label: 'My Business', emoji: '🏢' },
-      { to: '/dashboard/business/appointments', label: 'Appointments', emoji: '📅' },
-      { to: '/dashboard/business/reviews', label: 'Reviews', emoji: '⭐' },
+      { to: '/dashboard', label: 'Home', icon: 'LayoutDashboard' },
+      { to: '/dashboard/business', label: 'My Business', icon: 'Building2' },
+      { to: '/dashboard/business/appointments', label: 'Appointments', icon: 'CalendarCheck' },
+      { to: '/dashboard/business/reviews', label: 'Reviews', icon: 'Star' },
       { to: '/dashboard/insights', label: 'Insights', icon: 'BarChart2' },
-      { to: '/notifications', label: 'Notifications', emoji: '🔔' },
-      { to: '/dashboard/profile', label: 'Profile', emoji: '👤' },
+      { to: '/notifications', label: 'Notifications', icon: 'Bell' },
+      { to: '/dashboard/profile', label: 'Profile', icon: 'UserCircle' },
     ]
   }
   return [
-    { to: '/dashboard', label: 'Home', emoji: '🏠' },
-    { to: '/businesses', label: 'Browse Businesses', emoji: '🔍' },
-    { to: '/dashboard/appointments', label: 'My Appointments', emoji: '📅' },
+    { to: '/dashboard', label: 'Home', icon: 'LayoutDashboard' },
+    { to: '/businesses', label: 'Browse Businesses', icon: 'Search' },
+    { to: '/dashboard/appointments', label: 'My Appointments', icon: 'CalendarDays' },
     { to: '/dashboard/reviews', label: 'My Reviews', icon: 'Star' },
-    { to: '/notifications', label: 'Notifications', emoji: '🔔' },
-    { to: '/dashboard/profile', label: 'Profile', emoji: '👤' },
+    { to: '/notifications', label: 'Notifications', icon: 'Bell' },
+    { to: '/dashboard/profile', label: 'Profile', icon: 'UserCircle' },
   ]
 }
 
